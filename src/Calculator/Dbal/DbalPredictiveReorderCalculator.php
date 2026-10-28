@@ -72,16 +72,16 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
      */
     private function fetchOrderDates(int $variantId, int $companyId): array
     {
-        // Réutilise la définition des commandes comptées de company-insights
-        $countedCondition = $this->countedOrderSql->counted();
-
+        // PROOF COMMIT: Broken filters to prove tests detect it
+        // - Removed company filter (co.company_id = :company)
+        // - Removed cancelled filter (o.state <> 'cancelled')
         $sql = <<<SQL
             SELECT DISTINCT o.checkout_completed_at
             FROM sylius_order o
             INNER JOIN tmonier_company_order co ON co.order_id = o.id
             INNER JOIN sylius_order_item i ON i.order_id = o.id
             WHERE i.variant_id = :variant_id
-              AND {$countedCondition}
+              AND o.checkout_state = 'completed'
               AND o.checkout_completed_at IS NOT NULL
             ORDER BY o.checkout_completed_at ASC
         SQL;
