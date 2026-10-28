@@ -1,20 +1,4 @@
 services:
-    _defaults:
-        autowire: true
-        autoconfigure: true
-
-    Tmonier\SyliusPredictiveAnalyticsPlugin\:
-        resource: '../src/*'
-        exclude:
-            - '../src/DependencyInjection/'
-            - '../src/TmonierSyliusPredictiveAnalyticsPlugin.php'
-            - '../src/ValueObject/'
-
-    # Calculator
-    Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface:
-        alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator
-
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator:
         arguments:
-            $connection: '@doctrine.dbal.default_connection'
-            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
+            $variantRepository: '@sylius.repository.product_variant'
