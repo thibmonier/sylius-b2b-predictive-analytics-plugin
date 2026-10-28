@@ -50,10 +50,14 @@ if (null !== $prediction) {
 Le plugin inclut une commande pour recalculer toutes les prédictions :
 
 ```bash
-php bin/console app:predictive:recalculate
+php bin/console tmonier:predictive:recalculate
 ```
 
-Cette commande peut être déclenchée quotidiennement via Messenger ou un cron.
+Cette commande peut être planifiée quotidiennement via cron :
+
+```cron
+0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
+```
 
 ## Règles de calcul
 
@@ -64,7 +68,7 @@ Cette commande peut être déclenchée quotidiennement via Messenger ou un cron.
 
 ## Démo
 
-Une instance de démonstration est disponible sur [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr) (ou sur Railway si privée).
+Une instance de démonstration est disponible sur [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr).
 
 ## Auteur
 
