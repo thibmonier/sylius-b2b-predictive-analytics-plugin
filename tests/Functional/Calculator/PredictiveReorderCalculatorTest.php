@@ -53,12 +53,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 20) . ' days');
-            $order = $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $orderId = $order->getId();
-            $companyId = $acme->getId();
-            self::assertIsInt($orderId);
-            self::assertIsInt($companyId);
-            $this->linkOrderToCompany($orderId, $companyId);
+            $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
         }
 
         // Créer un customer pour BuildCo
@@ -68,12 +63,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         // Créer 3 commandes pour BuildCo (espacées de 30 jours)
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 30) . ' days');
-            $order = $this->catalog()->order($customerBuildco, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $orderId = $order->getId();
-            $companyId = $buildco->getId();
-            self::assertIsInt($orderId);
-            self::assertIsInt($companyId);
-            $this->linkOrderToCompany($orderId, $companyId);
+            $this->catalog()->order($customerBuildco, 10000, $orderDate->format('Y-m-d H:i:s'));
         }
 
         // Calculer pour Acme
@@ -109,12 +99,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 2; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 15) . ' days');
-            $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $orderId = $order->getId();
-            $companyId = $company->getId();
-            self::assertIsInt($orderId);
-            self::assertIsInt($companyId);
-            $this->linkOrderToCompany($orderId, $companyId);
+            $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
         }
 
         $result = $this->calculator->calculate($variant, $company);
@@ -146,21 +131,11 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 25) . ' days');
-            $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $orderId = $order->getId();
-            $companyId = $company->getId();
-            self::assertIsInt($orderId);
-            self::assertIsInt($companyId);
-            $this->linkOrderToCompany($orderId, $companyId);
+            $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
         }
 
         // 1 commande cancelled (ne doit PAS être comptée)
-        $cancelledOrder = $this->catalog()->order($customer, 10000, $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
-        $cancelledOrderId = $cancelledOrder->getId();
-        $companyId = $company->getId();
-        self::assertIsInt($cancelledOrderId);
-        self::assertIsInt($companyId);
-        $this->linkOrderToCompany($cancelledOrderId, $companyId);
+        $this->catalog()->order($customer, 10000, $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
 
         $result = $this->calculator->calculate($variant, $company);
 
@@ -170,17 +145,5 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $this->assertTrue($result->isPredicted(), 'Il doit y avoir une prédiction valide');
         $this->assertNull($result->reason, 'Il ne doit pas y avoir de raison d\'échec');
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
-    }
-
-    private function linkOrderToCompany(?int $orderId, ?int $companyId): void
-    {
-        assert(null !== $orderId, 'Order ID must not be null');
-        assert(null !== $companyId, 'Company ID must not be null');
-
-        $this->connection()->insert('tmonier_company_order', [
-            'company_id' => $companyId,
-            'order_id' => $orderId,
-            'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
-        ]);
     }
 }
