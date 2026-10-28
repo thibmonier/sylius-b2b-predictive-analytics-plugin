@@ -1,0 +1,17 @@
+doctrine:
+    dbal:
+        types:
+            # Doctrine types si nécessaire
+
+    orm:
+        mappings:
+            TmonierSyliusPredictiveAnalyticsPlugin:
+                is_bundle: false
+                type: attribute
+                dir: '%kernel.project_dir%/src/Entity'
+                prefix: 'Tmonier\SyliusPredictiveAnalyticsPlugin\Entity'
+                alias: TmonierPredictiveAnalytics
+
+doctrine_migrations:
+    migrations_paths:
+        'Tmonier\SyliusPredictiveAnalyticsPlugin\Migrations': '%kernel.project_dir%/migrations'
