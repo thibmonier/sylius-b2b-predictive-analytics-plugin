@@ -17,3 +17,8 @@ services:
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface:
         alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator
         public: true
+
+    # Injection du repository Company pour la commande
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Command\RecalculatePredictionsCommand:
+        arguments:
+            $companyRepository: '@tmonier_company_accounts.repository.company'
