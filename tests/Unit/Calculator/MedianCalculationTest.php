@@ -21,6 +21,7 @@ final class MedianCalculationTest extends TestCase
     {
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
+            $this->createCountedOrderSql(),
         );
 
         // On teste la méthode privée calculateMedian via réflexion
@@ -39,6 +40,7 @@ final class MedianCalculationTest extends TestCase
     {
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
+            $this->createCountedOrderSql(),
         );
 
         $method = new \ReflectionMethod($calculator, 'calculateMedian');
@@ -55,6 +57,7 @@ final class MedianCalculationTest extends TestCase
     {
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
+            $this->createCountedOrderSql(),
         );
 
         $method = new \ReflectionMethod($calculator, 'calculateMedian');
@@ -62,5 +65,17 @@ final class MedianCalculationTest extends TestCase
         $median = $method->invoke($calculator, [10, 20, 30]);
 
         $this->assertSame(20.0, $median);
+    }
+
+    private function createCountedOrderSql(): \Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql
+    {
+        $pendingCondition = new class() implements \Tmonier\SyliusCompanyInsightsPlugin\Approval\PendingOrderConditionInterface {
+            public function sql(string $alias): ?string
+            {
+                return null;
+            }
+        };
+
+        return new \Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql($pendingCondition);
     }
 }

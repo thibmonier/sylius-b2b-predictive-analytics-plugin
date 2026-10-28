@@ -7,6 +7,7 @@ namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal;
 use Doctrine\DBAL\Connection;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\ReorderPrediction;
 
@@ -24,6 +25,7 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
 
     public function __construct(
         private Connection $connection,
+        private CountedOrderSql $countedOrderSql,
     ) {
     }
 
