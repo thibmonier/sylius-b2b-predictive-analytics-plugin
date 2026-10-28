@@ -180,6 +180,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $this->connection()->insert('tmonier_company_order', [
             'company_id' => $companyId,
             'order_id' => $orderId,
+            'created_at' => (new \DateTimeImmutable())->format('Y-m-d H:i:s'),
         ]);
     }
 }
