@@ -9,7 +9,7 @@ parameters:
 
     excludePaths:
         # Makes PHPStan crash
-        - 'src/DependencyInjection/Configuration.php'
+        - 'src/DependencyInjection/Configuration.php (?)'
 
         # Test dependencies
         - 'tests/TestApplication/src/**.php'
@@ -18,3 +18,16 @@ parameters:
         - '/Parameter #1 \$configuration of method Symfony\\Component\\DependencyInjection\\Extension\\Extension::processConfiguration\(\) expects Symfony\\Component\\Config\\Definition\\ConfigurationInterface, Symfony\\Component\\Config\\Definition\\ConfigurationInterface\|null given\./'
         -
             identifier: missingType.iterableValue
+        # Tests fonctionnels : getContainer() renvoie object, pas le type exact
+        -
+            message: '#does not accept object#'
+            paths:
+                - tests/Functional/**
+        -
+            message: '#expects .+, object given#'
+            paths:
+                - tests/Functional/**
+        # RecalculatePredictionsCommand : calculator sera utilisé quand le recalcul sera implémenté
+        -
+            message: '#RecalculatePredictionsCommand::\$calculator is never read, only written#'
+            path: src/Command/RecalculatePredictionsCommand.php

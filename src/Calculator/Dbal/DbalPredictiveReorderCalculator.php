@@ -7,6 +7,7 @@ namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal;
 use Doctrine\DBAL\Connection;
 use Sylius\Component\Core\Model\ProductVariantInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
+use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\ReorderPrediction;
 
@@ -14,8 +15,7 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\ReorderPrediction;
  * Calcule l'intervalle médian de réassort via SQL.
  *
  * Règles (comme company-insights) :
- * - Commandes complétées (checkout_completed_at IS NOT NULL)
- * - Non annulées (state <> 'cancelled')
+ * - Commandes complétées et non annulées (via CountedOrderSql)
  * - Au moins 3 commandes pour calculer une prédiction
  */
 final readonly class DbalPredictiveReorderCalculator implements PredictiveReorderCalculatorInterface
@@ -25,22 +25,34 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
 
     public function __construct(
         private Connection $connection,
+        private CountedOrderSql $countedOrderSql,
     ) {
     }
 
     public function calculate(ProductVariantInterface $variant, CompanyInterface $company): ReorderPrediction
     {
-        $dates = $this->fetchOrderDates($variant->getId(), $company->getId());
+        $variantId = $variant->getId();
+        $companyId = $company->getId();
+
+        if (null === $companyId) {
+            throw new \InvalidArgumentException('Company must have an ID');
+        }
+
+        if (!is_int($variantId)) {
+            throw new \InvalidArgumentException('ProductVariant must have a numeric ID');
+        }
+
+        $dates = $this->fetchOrderDates($variantId, $companyId);
 
         if (count($dates) < self::MIN_ORDERS) {
-            return ReorderPrediction::insufficientHistory('historique insuffisant');
+            return ReorderPrediction::insufficientHistory(count($dates));
         }
 
         $intervals = $this->calculateIntervals($dates);
         $medianIntervalDays = $this->calculateMedian($intervals);
         $lastOrderDate = end($dates);
 
-        return ReorderPrediction::fromCalculation(
+        return ReorderPrediction::predicted(
             medianIntervalDays: $medianIntervalDays,
             lastOrderDate: $lastOrderDate,
             orderCount: count($dates),
@@ -60,27 +72,31 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
      */
     private function fetchOrderDates(int $variantId, int $companyId): array
     {
-        // Requête SQL : commandes complétées, non annulées, triées par date
-        $sql = <<<'SQL'
+        // Réutilise la définition des commandes comptées de company-insights
+        $countedCondition = $this->countedOrderSql->counted();
+
+        $sql = <<<SQL
             SELECT DISTINCT o.checkout_completed_at
             FROM sylius_order o
             INNER JOIN tmonier_company_order co ON co.order_id = o.id
             INNER JOIN sylius_order_item i ON i.order_id = o.id
-            WHERE co.company_id = :company_id
-              AND i.variant_id = :variant_id
-              AND o.checkout_state = 'completed'
-              AND o.state <> 'cancelled'
+            WHERE i.variant_id = :variant_id
+              AND {$countedCondition}
               AND o.checkout_completed_at IS NOT NULL
             ORDER BY o.checkout_completed_at ASC
         SQL;
 
         $rows = $this->connection->fetchAllAssociative($sql, [
-            'company_id' => $companyId,
+            'company' => $companyId,
             'variant_id' => $variantId,
         ]);
 
         return array_map(
-            static fn (array $row): \DateTimeImmutable => new \DateTimeImmutable($row['checkout_completed_at']),
+            static function (array $row): \DateTimeImmutable {
+                assert(is_string($row['checkout_completed_at']));
+
+                return new \DateTimeImmutable($row['checkout_completed_at']);
+            },
             $rows,
         );
     }
@@ -89,6 +105,7 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
      * Calcule les intervalles en jours entre commandes successives.
      *
      * @param list<\DateTimeImmutable> $dates Dates triées par ordre chronologique
+     *
      * @return list<int> Intervalles en jours
      */
     private function calculateIntervals(array $dates): array
@@ -107,6 +124,7 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
      * Calcule la médiane d'un tableau d'entiers.
      *
      * @param list<int> $values
+     *
      * @return float Médiane (peut être décimale : 21.5)
      */
     private function calculateMedian(array $values): float

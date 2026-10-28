@@ -22,7 +22,10 @@ final class InstallationTest extends KernelTestCase
     {
         self::bootKernel();
 
-        $bundles = self::$kernel->getBundles();
+        $kernel = self::$kernel;
+        $this->assertNotNull($kernel);
+
+        $bundles = $kernel->getBundles();
 
         $this->assertArrayHasKey(
             'TmonierSyliusPredictiveAnalyticsPlugin',
