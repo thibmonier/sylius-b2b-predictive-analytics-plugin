@@ -66,6 +66,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
 
     /**
      * Scénario alternatif : intervalles irréguliers (explication avec décimale).
+     * 5 commandes = 4 intervalles (20, 21, 60, 22) → médiane 21,5.
      */
     public function testCalculateWithIrregularIntervals(): void
     {
@@ -74,21 +75,21 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $customer = $this->catalog()->customer('buyer-irregular');
         $this->catalog()->member($company, $customer);
 
-        // 4 commandes : intervalles 20, 21, 60, 22 jours → médiane 21,5
+        // 5 commandes : intervalles 20, 21, 60, 22 jours → médiane 21,5
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         $cumulativeDays = [0, 20, 41, 101, 123]; // 0, +20, +21, +60, +22
-        for ($i = 0; $i < 4; ++$i) {
-            $orderDate = $baseDate->modify('+' . $cumulativeDays[$i] . ' days');
+        foreach ($cumulativeDays as $cumulDays) {
+            $orderDate = $baseDate->modify('+' . $cumulDays . ' days');
             $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
         $result = $this->calculator->calculate($variant, $company);
 
-        // Médiane entre 21 et 22 = 21,5
+        // Médiane de [20, 21, 22, 60] triés = (21 + 22) / 2 = 21,5
         $this->assertSame(21.5, $result->medianIntervalDays);
 
         // Explication avec décimale
-        $this->assertStringContainsString('commandée 4 fois', $result->explanation);
+        $this->assertStringContainsString('commandée 5 fois', $result->explanation);
         $this->assertStringContainsString('21.5 jours', $result->explanation);
     }
 
