@@ -1,6 +1,4 @@
 imports:
     - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
-    - { resource: "@TmonierSyliusPurchaseApprovalPlugin/config/config.yaml" }
-    - { resource: "@TmonierSyliusTradeCreditPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusCompanyInsightsPlugin/config/config.yaml" }
     - { resource: "services.php" }
