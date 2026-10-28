@@ -1,0 +1,4 @@
+imports:
+    - { resource: "@TmonierSyliusCompanyAccountsPlugin/config/config.yaml" }
+    - { resource: "@TmonierSyliusCompanyInsightsPlugin/config/config.yaml" }
+    - { resource: "services.php" }
