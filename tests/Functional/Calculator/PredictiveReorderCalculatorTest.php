@@ -68,7 +68,12 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
 
         // Calculer pour Acme
         $resultAcme = $this->calculator->calculate($variant, $acme);
-        $this->assertSame(20.0, $resultAcme->medianIntervalDays, 'Acme doit avoir un intervalle médian de 20 jours');
+        $acmeId = $acme->getId();
+        $variantId = $variant->getId();
+        self::assertIsInt($acmeId);
+        self::assertIsInt($variantId);
+        $diagnostic = $this->databaseStateForDiagnostic($acmeId, $variantId);
+        $this->assertSame(20.0, $resultAcme->medianIntervalDays, 'Acme doit avoir un intervalle médian de 20 jours. ' . $diagnostic);
         $this->assertTrue($resultAcme->isPredicted(), 'Acme doit avoir une prédiction valide');
         $this->assertNull($resultAcme->reason, 'Acme ne doit pas avoir de raison d\'échec');
 
@@ -104,10 +109,15 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
 
         $result = $this->calculator->calculate($variant, $company);
 
+        $companyId = $company->getId();
+        $variantId = $variant->getId();
+        self::assertIsInt($companyId);
+        self::assertIsInt($variantId);
+        $diagnostic = $this->databaseStateForDiagnostic($companyId, $variantId);
         $this->assertSame(PredictionFailureReason::INSUFFICIENT_HISTORY, $result->reason, 'La raison doit être INSUFFICIENT_HISTORY');
         $this->assertFalse($result->isPredicted(), 'Il ne doit pas y avoir de prédiction');
         $this->assertNull($result->medianIntervalDays, 'L\'intervalle médian doit être null');
-        $this->assertStringContainsString('commandée 2 fois', $result->explanation, 'L\'explication doit mentionner "commandée 2 fois"');
+        $this->assertStringContainsString('commandée 2 fois', $result->explanation, 'L\'explication doit mentionner "commandée 2 fois". ' . $diagnostic);
         $this->assertStringContainsString('3 commandes nécessaires', $result->explanation, 'L\'explication doit mentionner "3 commandes nécessaires"');
     }
 
@@ -141,7 +151,12 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
 
         // Si les 4 commandes étaient comptées, l'intervalle médian serait différent de 25
         // Avec seulement les 3 commandes completed, l'intervalle médian doit être 25.0
-        $this->assertSame(25.0, $result->medianIntervalDays, 'L\'intervalle médian doit être 25 jours (seules les 3 commandes completed comptent)');
+        $companyId = $company->getId();
+        $variantId = $variant->getId();
+        self::assertIsInt($companyId);
+        self::assertIsInt($variantId);
+        $diagnostic = $this->databaseStateForDiagnostic($companyId, $variantId);
+        $this->assertSame(25.0, $result->medianIntervalDays, 'L\'intervalle médian doit être 25 jours (seules les 3 commandes completed comptent). ' . $diagnostic);
         $this->assertTrue($result->isPredicted(), 'Il doit y avoir une prédiction valide');
         $this->assertNull($result->reason, 'Il ne doit pas y avoir de raison d\'échec');
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
