@@ -76,9 +76,9 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
 
         // 4 commandes : intervalles 20, 21, 60, 22 jours → médiane 21,5
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
-        $intervals = [0, 20, 41, 101, 123]; // cumul : 0, 20, 20+21, 20+21+60, 20+21+60+22
-        foreach ($intervals as $cumulDays) {
-            $orderDate = $baseDate->modify('+' . $cumulDays . ' days');
+        $cumulativeDays = [0, 20, 41, 101, 123]; // 0, +20, +21, +60, +22
+        for ($i = 0; $i < 4; ++$i) {
+            $orderDate = $baseDate->modify('+' . $cumulativeDays[$i] . ' days');
             $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
