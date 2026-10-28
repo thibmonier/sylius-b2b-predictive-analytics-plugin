@@ -57,6 +57,8 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
             $order = $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
             $orderId = $order->getId();
             $companyId = $acme->getId();
+            self::assertIsInt($orderId);
+            self::assertIsInt($companyId);
             $this->linkOrderToCompany($orderId, $companyId);
         }
 
@@ -68,7 +70,11 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 30) . ' days');
             $order = $this->catalog()->order($customerBuildco, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $this->linkOrderToCompany($order->getId(), $buildco->getId());
+            $orderId = $order->getId();
+            $companyId = $buildco->getId();
+            self::assertIsInt($orderId);
+            self::assertIsInt($companyId);
+            $this->linkOrderToCompany($orderId, $companyId);
         }
 
         // Calculer pour Acme
@@ -105,7 +111,11 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         for ($i = 0; $i < 2; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 15) . ' days');
             $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $this->linkOrderToCompany($order->getId(), $company->getId());
+            $orderId = $order->getId();
+            $companyId = $company->getId();
+            self::assertIsInt($orderId);
+            self::assertIsInt($companyId);
+            $this->linkOrderToCompany($orderId, $companyId);
         }
 
         $result = $this->calculator->calculate($variant, $company);
@@ -138,12 +148,20 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 25) . ' days');
             $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $this->linkOrderToCompany($order->getId(), $company->getId());
+            $orderId = $order->getId();
+            $companyId = $company->getId();
+            self::assertIsInt($orderId);
+            self::assertIsInt($companyId);
+            $this->linkOrderToCompany($orderId, $companyId);
         }
 
         // 1 commande cancelled (ne doit PAS être comptée)
         $cancelledOrder = $this->catalog()->order($customer, 10000, $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
-        $this->linkOrderToCompany($cancelledOrder->getId(), $company->getId());
+        $cancelledOrderId = $cancelledOrder->getId();
+        $companyId = $company->getId();
+        self::assertIsInt($cancelledOrderId);
+        self::assertIsInt($companyId);
+        $this->linkOrderToCompany($cancelledOrderId, $companyId);
 
         $result = $this->calculator->calculate($variant, $company);
 
