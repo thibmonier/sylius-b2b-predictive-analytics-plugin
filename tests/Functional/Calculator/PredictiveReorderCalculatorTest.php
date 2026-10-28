@@ -265,7 +265,10 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
     }
 
-    private function createCompanyMock(int $id): \PHPUnit\Framework\MockObject\MockObject
+    /**
+     * @return \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface
+     */
+    private function createCompanyMock(int $id): object
     {
         $company = $this->createMock(\Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface::class);
         $company->method('getId')->willReturn($id);
@@ -273,7 +276,10 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         return $company;
     }
 
-    private function createVariantMock(int $id): \PHPUnit\Framework\MockObject\MockObject
+    /**
+     * @return \Sylius\Component\Core\Model\ProductVariantInterface
+     */
+    private function createVariantMock(int $id): object
     {
         $variant = $this->createMock(\Sylius\Component\Core\Model\ProductVariantInterface::class);
         $variant->method('getId')->willReturn($id);
