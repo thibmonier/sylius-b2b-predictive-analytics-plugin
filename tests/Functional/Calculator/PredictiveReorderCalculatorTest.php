@@ -55,7 +55,9 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 20) . ' days');
             $order = $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
-            $this->linkOrderToCompany($order->getId(), $acme->getId());
+            $orderId = $order->getId();
+            $companyId = $acme->getId();
+            $this->linkOrderToCompany($orderId, $companyId);
         }
 
         // Créer un customer pour BuildCo
@@ -153,8 +155,11 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
     }
 
-    private function linkOrderToCompany(int $orderId, int $companyId): void
+    private function linkOrderToCompany(?int $orderId, ?int $companyId): void
     {
+        assert(null !== $orderId, 'Order ID must not be null');
+        assert(null !== $companyId, 'Company ID must not be null');
+
         $this->connection()->insert('tmonier_company_order', [
             'company_id' => $companyId,
             'order_id' => $orderId,
