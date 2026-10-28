@@ -22,6 +22,8 @@ final class MedianCalculationTest extends TestCase
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
             $this->createCountedOrderSql(),
+            $this->createMock(\Doctrine\ORM\EntityManagerInterface::class),
+            $this->createMock(\Sylius\Component\Product\Repository\ProductVariantRepositoryInterface::class),
         );
 
         // On teste la méthode privée calculateMedian via réflexion
@@ -41,6 +43,8 @@ final class MedianCalculationTest extends TestCase
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
             $this->createCountedOrderSql(),
+            $this->createMock(\Doctrine\ORM\EntityManagerInterface::class),
+            $this->createMock(\Sylius\Component\Product\Repository\ProductVariantRepositoryInterface::class),
         );
 
         $method = new \ReflectionMethod($calculator, 'calculateMedian');
@@ -58,6 +62,8 @@ final class MedianCalculationTest extends TestCase
         $calculator = new DbalPredictiveReorderCalculator(
             $this->createMock(\Doctrine\DBAL\Connection::class),
             $this->createCountedOrderSql(),
+            $this->createMock(\Doctrine\ORM\EntityManagerInterface::class),
+            $this->createMock(\Sylius\Component\Product\Repository\ProductVariantRepositoryInterface::class),
         );
 
         $method = new \ReflectionMethod($calculator, 'calculateMedian');

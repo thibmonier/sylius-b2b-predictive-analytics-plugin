@@ -65,9 +65,36 @@ final class RecalculateForCompanyTest extends KernelTestCase
         // 2 variantes commandées
         $this->assertSame(2, $count, 'Le recalcul doit traiter 2 variantes');
 
-        // TODO: Vérifier que les prédictions sont persistées en base
-        // (nécessite l'entité StoredPrediction et le repository)
-        // Pour l'instant, on vérifie juste que la méthode retourne le bon nombre
+        // Vérifier la persistance en base
+        $predictions = $this->connection()->fetchAllAssociative(
+            'SELECT variant_id, median_interval_days, order_count, reason FROM tmonier_predictive_stored_prediction WHERE company_id = ? ORDER BY variant_id',
+            [$company->getId()],
+        );
+
+        $this->assertCount(2, $predictions, 'Doit avoir 2 prédictions persistées');
+
+        // Variant1: 3 commandes, intervalle 20 jours
+        $pred1 = $predictions[0];
+        \assert(is_numeric($pred1['variant_id']));
+        \assert(is_numeric($pred1['median_interval_days']));
+        \assert(is_numeric($pred1['order_count']));
+        $variant1Id = $variant1->getId();
+        \assert(is_int($variant1Id));
+        $this->assertSame($variant1Id, (int) $pred1['variant_id']);
+        $this->assertSame(20.0, (float) $pred1['median_interval_days']);
+        $this->assertSame(3, (int) $pred1['order_count']);
+        $this->assertNull($pred1['reason']);
+
+        // Variant2: 2 commandes, historique insuffisant
+        $pred2 = $predictions[1];
+        \assert(is_numeric($pred2['variant_id']));
+        \assert(is_numeric($pred2['order_count']));
+        $variant2Id = $variant2->getId();
+        \assert(is_int($variant2Id));
+        $this->assertSame($variant2Id, (int) $pred2['variant_id']);
+        $this->assertNull($pred2['median_interval_days']);
+        $this->assertSame(2, (int) $pred2['order_count']);
+        $this->assertSame('INSUFFICIENT_HISTORY', $pred2['reason']);
     }
 
     /**
@@ -95,6 +122,13 @@ final class RecalculateForCompanyTest extends KernelTestCase
         $count2 = $this->calculator->recalculateForCompany($company);
         $this->assertSame(1, $count2, 'Le recalcul doit rester idempotent');
 
-        // TODO: Vérifier qu'il n'y a qu'une seule prédiction en base (pas de duplication)
+        // Vérifier qu'il n'y a qu'une seule ligne en base (pas de duplication)
+        $result = $this->connection()->fetchOne(
+            'SELECT COUNT(*) FROM tmonier_predictive_stored_prediction WHERE company_id = ?',
+            [$company->getId()],
+        );
+        \assert(is_numeric($result));
+        $rowCount = (int) $result;
+        $this->assertSame(1, $rowCount, 'Doit avoir exactement 1 prédiction (idempotence)');
     }
 }
