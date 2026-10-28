@@ -1,4 +1,19 @@
 services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Tmonier\SyliusPredictiveAnalyticsPlugin\:
+        resource: '../src/*'
+        exclude: '../src/{Entity,Migrations,TmonierSyliusPredictiveAnalyticsPlugin.php}'
+
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator:
         arguments:
+            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
             $variantRepository: '@sylius.repository.product_variant'
+
+    # Alias interface -> implémentation
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface:
+        alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator
+        public: true
