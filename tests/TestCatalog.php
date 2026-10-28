@@ -144,6 +144,20 @@ final class TestCatalog
             $this->insertAdjustment('shipment_id', $this->insertShipment((int) $order->getId()), $shipmentTax);
         }
 
+        // Link order to company if the customer is a member
+        $companyId = $this->connection()->fetchOne(
+            'SELECT company_id FROM tmonier_company_member WHERE customer_id = ? AND enabled = TRUE LIMIT 1',
+            [$customer->getId()],
+        );
+        if (false !== $companyId) {
+            $this->connection()->insert('tmonier_company_order', [
+                ...$this->explicitId('tmonier_company_order'),
+                'company_id' => $companyId,
+                'order_id' => $order->getId(),
+                'created_at' => (new \DateTimeImmutable($completedAt))->format('Y-m-d H:i:s'),
+            ]);
+        }
+
         return $order;
     }
 
@@ -179,6 +193,20 @@ final class TestCatalog
             'UPDATE sylius_order SET items_total = :total, adjustments_total = 0, total = :total WHERE id = :id',
             ['total' => $total, 'id' => $order->getId()],
         );
+
+        // Link order to company if the customer is a member
+        $companyId = $this->connection()->fetchOne(
+            'SELECT company_id FROM tmonier_company_member WHERE customer_id = ? AND enabled = TRUE LIMIT 1',
+            [$customer->getId()],
+        );
+        if (false !== $companyId) {
+            $this->connection()->insert('tmonier_company_order', [
+                ...$this->explicitId('tmonier_company_order'),
+                'company_id' => $companyId,
+                'order_id' => $order->getId(),
+                'created_at' => (new \DateTimeImmutable($completedAt))->format('Y-m-d H:i:s'),
+            ]);
+        }
 
         return $order;
     }
