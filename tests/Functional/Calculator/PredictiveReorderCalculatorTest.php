@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Calculator;
 
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
+use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\PredictionFailureReason;
-use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
 
 /**
  * Tests fonctionnels du calculateur prédictif avec base de données.
