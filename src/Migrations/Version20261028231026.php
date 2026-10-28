@@ -16,7 +16,8 @@ final class Version20261028231026 extends AbstractMigration
 
     public function up(Schema $schema): void
     {
-        $this->addSql(<<<'SQL'
+        $this->addSql(
+            <<<'SQL'
             CREATE TABLE tmonier_predictive_stored_prediction (
                 id INT AUTO_INCREMENT NOT NULL,
                 company_id INT NOT NULL,
