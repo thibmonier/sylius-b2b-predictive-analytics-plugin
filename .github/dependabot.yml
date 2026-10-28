@@ -1,0 +1,21 @@
+version: 2
+updates:
+- package-ecosystem: composer
+  # A release must be a week old before it is proposed (security updates ignore the cooldown).
+  cooldown:
+      default-days: 7
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "10:00"
+  open-pull-requests-limit: 10
+- package-ecosystem: github-actions
+  directory: /
+  schedule:
+      interval: weekly
+  # A release must be a week old before it is proposed (security updates ignore the cooldown).
+  cooldown:
+      default-days: 7
+  groups:
+      github-actions:
+          patterns: ["*"]
