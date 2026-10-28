@@ -33,8 +33,8 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateRespectsScopeByCompany(): void
     {
         // Créer deux entreprises
-        $this->connection->insert('tmonier_company', ['id' => 1, 'name' => 'Acme Corp']);
-        $this->connection->insert('tmonier_company', ['id' => 2, 'name' => 'BuildCo Ltd']);
+        $this->connection->insert('tmonier_company', ['id' => 1, 'code' => 'ACME', 'name' => 'Acme Corp']);
+        $this->connection->insert('tmonier_company', ['id' => 2, 'code' => 'BUILD', 'name' => 'BuildCo Ltd']);
 
         // Créer une variante de produit
         $this->connection->insert('sylius_product_variant', [
@@ -128,7 +128,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateReturnsInsufficientHistoryWhenLessThan3Orders(): void
     {
         // Créer une entreprise
-        $this->connection->insert('tmonier_company', ['id' => 10, 'name' => 'SmallCo']);
+        $this->connection->insert('tmonier_company', ['id' => 10, 'code' => 'SMALL', 'name' => 'SmallCo']);
 
         // Créer une variante
         $this->connection->insert('sylius_product_variant', [
@@ -186,7 +186,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateExcludesCancelledOrders(): void
     {
         // Créer une entreprise
-        $this->connection->insert('tmonier_company', ['id' => 20, 'name' => 'CancelCo']);
+        $this->connection->insert('tmonier_company', ['id' => 20, 'code' => 'CANCEL', 'name' => 'CancelCo']);
 
         // Créer une variante
         $this->connection->insert('sylius_product_variant', [
