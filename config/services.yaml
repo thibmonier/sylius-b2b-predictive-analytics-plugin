@@ -17,4 +17,4 @@ services:
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator:
         arguments:
             $connection: '@doctrine.dbal.default_connection'
-            $countedOrderSql: '@Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql'
+            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
