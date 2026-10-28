@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Calculator;
 
-use Doctrine\DBAL\Connection;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\PredictionFailureReason;
+use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
 
 /**
  * Tests fonctionnels du calculateur prédictif avec base de données.
@@ -15,15 +16,21 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\PredictionFailureReason;
  */
 final class PredictiveReorderCalculatorTest extends KernelTestCase
 {
-    private PredictiveReorderCalculatorInterface $calculator;
+    use PredictiveTestTrait;
 
-    private Connection $connection;
+    private PredictiveReorderCalculatorInterface $calculator;
 
     protected function setUp(): void
     {
         self::bootKernel();
         $this->calculator = self::getContainer()->get(PredictiveReorderCalculatorInterface::class);
-        $this->connection = self::getContainer()->get('doctrine.dbal.default_connection');
+        $this->beginTestTransaction();
+    }
+
+    protected function tearDown(): void
+    {
+        $this->rollBackTestTransaction();
+        parent::tearDown();
     }
 
     /**
@@ -33,80 +40,34 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateRespectsScopeByCompany(): void
     {
         // Créer deux entreprises
-        $this->connection->insert('tmonier_company', ['id' => 1, 'code' => 'ACME', 'name' => 'Acme Corp', 'enabled' => true]);
-        $this->connection->insert('tmonier_company', ['id' => 2, 'code' => 'BUILD', 'name' => 'BuildCo Ltd', 'enabled' => true]);
+        $acme = $this->catalog()->company('Acme');
+        $buildco = $this->catalog()->company('BuildCo');
 
-        // Créer une variante de produit
-        $this->connection->insert('sylius_product_variant', [
-            'id' => 1,
-            'code' => 'TEST_VARIANT_001',
-        ]);
+        // Créer un produit avec une variante
+        $variant = $this->catalog()->product('widget', [$this->catalog()->localeCode() => 'Test Widget']);
+
+        // Créer un customer pour Acme
+        $customerAcme = $this->catalog()->customer('buyer-acme');
+        $this->catalog()->member($acme, $customerAcme);
 
         // Créer 3 commandes pour Acme (espacées de 20 jours)
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 3; ++$i) {
-            $orderId = 100 + $i;
             $orderDate = $baseDate->modify('+' . ($i * 20) . ' days');
-
-            $this->connection->insert('sylius_order', [
-                'id' => $orderId,
-                'number' => 'ACME-' . str_pad((string) $i, 6, '0', \STR_PAD_LEFT),
-                'checkout_state' => 'completed',
-                'state' => 'new',
-                'checkout_completed_at' => $orderDate->format('Y-m-d H:i:s'),
-                'currency_code' => 'EUR',
-                'locale_code' => 'fr_FR',
-                'total' => 10000,
-            ]);
-
-            $this->connection->insert('tmonier_company_order', [
-                'company_id' => 1,
-                'order_id' => $orderId,
-            ]);
-
-            $this->connection->insert('sylius_order_item', [
-                'order_id' => $orderId,
-                'variant_id' => 1,
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total' => 10000,
-            ]);
+            $order = $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->linkOrderToCompany($order->getId(), $acme->getId());
         }
+
+        // Créer un customer pour BuildCo
+        $customerBuildco = $this->catalog()->customer('buyer-buildco');
+        $this->catalog()->member($buildco, $customerBuildco);
 
         // Créer 3 commandes pour BuildCo (espacées de 30 jours)
         for ($i = 0; $i < 3; ++$i) {
-            $orderId = 200 + $i;
             $orderDate = $baseDate->modify('+' . ($i * 30) . ' days');
-
-            $this->connection->insert('sylius_order', [
-                'id' => $orderId,
-                'number' => 'BUILD-' . str_pad((string) $i, 6, '0', \STR_PAD_LEFT),
-                'checkout_state' => 'completed',
-                'state' => 'new',
-                'checkout_completed_at' => $orderDate->format('Y-m-d H:i:s'),
-                'currency_code' => 'EUR',
-                'locale_code' => 'fr_FR',
-                'total' => 10000,
-            ]);
-
-            $this->connection->insert('tmonier_company_order', [
-                'company_id' => 2,
-                'order_id' => $orderId,
-            ]);
-
-            $this->connection->insert('sylius_order_item', [
-                'order_id' => $orderId,
-                'variant_id' => 1,
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total' => 10000,
-            ]);
+            $order = $this->catalog()->order($customerBuildco, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->linkOrderToCompany($order->getId(), $buildco->getId());
         }
-
-        // Créer des mocks d'entreprise et de variante
-        $acme = $this->createCompanyMock(1);
-        $buildco = $this->createCompanyMock(2);
-        $variant = $this->createVariantMock(1);
 
         // Calculer pour Acme
         $resultAcme = $this->calculator->calculate($variant, $acme);
@@ -128,47 +89,22 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateReturnsInsufficientHistoryWhenLessThan3Orders(): void
     {
         // Créer une entreprise
-        $this->connection->insert('tmonier_company', ['id' => 10, 'code' => 'SMALL', 'name' => 'SmallCo', 'enabled' => true]);
+        $company = $this->catalog()->company('SmallCo');
 
-        // Créer une variante
-        $this->connection->insert('sylius_product_variant', [
-            'id' => 10,
-            'code' => 'TEST_VARIANT_010',
-        ]);
+        // Créer un produit avec une variante
+        $variant = $this->catalog()->product('small-widget', [$this->catalog()->localeCode() => 'Small Widget']);
+
+        // Créer un customer
+        $customer = $this->catalog()->customer('buyer-small');
+        $this->catalog()->member($company, $customer);
 
         // Créer seulement 2 commandes
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 2; ++$i) {
-            $orderId = 1000 + $i;
             $orderDate = $baseDate->modify('+' . ($i * 15) . ' days');
-
-            $this->connection->insert('sylius_order', [
-                'id' => $orderId,
-                'number' => 'SMALL-' . str_pad((string) $i, 6, '0', \STR_PAD_LEFT),
-                'checkout_state' => 'completed',
-                'state' => 'new',
-                'checkout_completed_at' => $orderDate->format('Y-m-d H:i:s'),
-                'currency_code' => 'EUR',
-                'locale_code' => 'fr_FR',
-                'total' => 10000,
-            ]);
-
-            $this->connection->insert('tmonier_company_order', [
-                'company_id' => 10,
-                'order_id' => $orderId,
-            ]);
-
-            $this->connection->insert('sylius_order_item', [
-                'order_id' => $orderId,
-                'variant_id' => 10,
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total' => 10000,
-            ]);
+            $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->linkOrderToCompany($order->getId(), $company->getId());
         }
-
-        $company = $this->createCompanyMock(10);
-        $variant = $this->createVariantMock(10);
 
         $result = $this->calculator->calculate($variant, $company);
 
@@ -186,74 +122,26 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     public function testCalculateExcludesCancelledOrders(): void
     {
         // Créer une entreprise
-        $this->connection->insert('tmonier_company', ['id' => 20, 'code' => 'CANCEL', 'name' => 'CancelCo', 'enabled' => true]);
+        $company = $this->catalog()->company('CancelCo');
 
-        // Créer une variante
-        $this->connection->insert('sylius_product_variant', [
-            'id' => 20,
-            'code' => 'TEST_VARIANT_020',
-        ]);
+        // Créer un produit avec une variante
+        $variant = $this->catalog()->product('cancel-widget', [$this->catalog()->localeCode() => 'Cancel Widget']);
 
-        // Créer 3 commandes completed + 1 cancelled
+        // Créer un customer
+        $customer = $this->catalog()->customer('buyer-cancel');
+        $this->catalog()->member($company, $customer);
+
+        // Créer 3 commandes completed espacées de 25 jours
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
-
-        // 3 commandes completed espacées de 25 jours
         for ($i = 0; $i < 3; ++$i) {
-            $orderId = 2000 + $i;
             $orderDate = $baseDate->modify('+' . ($i * 25) . ' days');
-
-            $this->connection->insert('sylius_order', [
-                'id' => $orderId,
-                'number' => 'CANCEL-' . str_pad((string) $i, 6, '0', \STR_PAD_LEFT),
-                'checkout_state' => 'completed',
-                'state' => 'new',
-                'checkout_completed_at' => $orderDate->format('Y-m-d H:i:s'),
-                'currency_code' => 'EUR',
-                'locale_code' => 'fr_FR',
-                'total' => 10000,
-            ]);
-
-            $this->connection->insert('tmonier_company_order', [
-                'company_id' => 20,
-                'order_id' => $orderId,
-            ]);
-
-            $this->connection->insert('sylius_order_item', [
-                'order_id' => $orderId,
-                'variant_id' => 20,
-                'quantity' => 1,
-                'unit_price' => 10000,
-                'total' => 10000,
-            ]);
+            $order = $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->linkOrderToCompany($order->getId(), $company->getId());
         }
 
         // 1 commande cancelled (ne doit PAS être comptée)
-        $this->connection->insert('sylius_order', [
-            'id' => 2010,
-            'number' => 'CANCEL-' . str_pad('10', 6, '0', \STR_PAD_LEFT),
-            'checkout_state' => 'completed',
-            'state' => 'cancelled',
-            'checkout_completed_at' => $baseDate->modify('+40 days')->format('Y-m-d H:i:s'),
-            'currency_code' => 'EUR',
-            'locale_code' => 'fr_FR',
-            'total' => 10000,
-        ]);
-
-        $this->connection->insert('tmonier_company_order', [
-            'company_id' => 20,
-            'order_id' => 2010,
-        ]);
-
-        $this->connection->insert('sylius_order_item', [
-            'order_id' => 2010,
-            'variant_id' => 20,
-            'quantity' => 1,
-            'unit_price' => 10000,
-            'total' => 10000,
-        ]);
-
-        $company = $this->createCompanyMock(20);
-        $variant = $this->createVariantMock(20);
+        $cancelledOrder = $this->catalog()->order($customer, 10000, $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
+        $this->linkOrderToCompany($cancelledOrder->getId(), $company->getId());
 
         $result = $this->calculator->calculate($variant, $company);
 
@@ -265,25 +153,11 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
     }
 
-    /**
-     * @return \Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface
-     */
-    private function createCompanyMock(int $id): object
+    private function linkOrderToCompany(int $orderId, int $companyId): void
     {
-        $company = $this->createMock(\Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface::class);
-        $company->method('getId')->willReturn($id);
-
-        return $company;
-    }
-
-    /**
-     * @return \Sylius\Component\Core\Model\ProductVariantInterface
-     */
-    private function createVariantMock(int $id): object
-    {
-        $variant = $this->createMock(\Sylius\Component\Core\Model\ProductVariantInterface::class);
-        $variant->method('getId')->willReturn($id);
-
-        return $variant;
+        $this->connection()->insert('tmonier_company_order', [
+            'company_id' => $companyId,
+            'order_id' => $orderId,
+        ]);
     }
 }
