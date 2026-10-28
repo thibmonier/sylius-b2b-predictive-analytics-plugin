@@ -1,2 +1,2 @@
-# Plugin configuration
-# This plugin is backend-only and requires no additional configuration
+imports:
+    - { resource: "services.yaml" }
