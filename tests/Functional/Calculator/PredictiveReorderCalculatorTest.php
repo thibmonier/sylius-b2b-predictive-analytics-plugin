@@ -33,6 +33,66 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
     }
 
     /**
+     * Scénario nominal : calcule intervalle médian, date attendue et explication.
+     */
+    public function testCalculateReturnsMedianIntervalAndExpectedDate(): void
+    {
+        $company = $this->catalog()->company('RegularCo');
+        $variant = $this->catalog()->product('regular-widget', [$this->catalog()->localeCode() => 'Regular Widget']);
+        $customer = $this->catalog()->customer('buyer-regular');
+        $this->catalog()->member($company, $customer);
+
+        // 5 commandes tous les 28 jours
+        $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
+        for ($i = 0; $i < 5; ++$i) {
+            $orderDate = $baseDate->modify('+' . ($i * 28) . ' days');
+            $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
+        }
+
+        $result = $this->calculator->calculate($variant, $company);
+
+        // Médiane de 28 jours
+        $this->assertSame(28.0, $result->medianIntervalDays);
+
+        // Date attendue : dernière commande (2025-01-01 + 4*28 = 113 jours) + 28 jours
+        $expectedDate = $baseDate->modify('+' . (4 * 28 + 28) . ' days');
+        $this->assertNotNull($result->expectedReorderDate);
+        $this->assertEquals($expectedDate, $result->expectedReorderDate, 'Date attendue incorrecte');
+
+        // Explication
+        $this->assertStringContainsString('commandée 5 fois', $result->explanation);
+        $this->assertStringContainsString('tous les 28 jours', $result->explanation);
+    }
+
+    /**
+     * Scénario alternatif : intervalles irréguliers (explication avec décimale).
+     */
+    public function testCalculateWithIrregularIntervals(): void
+    {
+        $company = $this->catalog()->company('IrregularCo');
+        $variant = $this->catalog()->product('irregular-widget', [$this->catalog()->localeCode() => 'Irregular Widget']);
+        $customer = $this->catalog()->customer('buyer-irregular');
+        $this->catalog()->member($company, $customer);
+
+        // 4 commandes : intervalles 20, 21, 60, 22 jours → médiane 21,5
+        $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
+        $intervals = [0, 20, 41, 101, 123]; // cumul : 0, 20, 20+21, 20+21+60, 20+21+60+22
+        foreach ($intervals as $cumulDays) {
+            $orderDate = $baseDate->modify('+' . $cumulDays . ' days');
+            $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
+        }
+
+        $result = $this->calculator->calculate($variant, $company);
+
+        // Médiane entre 21 et 22 = 21,5
+        $this->assertSame(21.5, $result->medianIntervalDays);
+
+        // Explication avec décimale
+        $this->assertStringContainsString('commandée 4 fois', $result->explanation);
+        $this->assertStringContainsString('21.5 jours', $result->explanation);
+    }
+
+    /**
      * Scénario alternatif : Référence à une seule entreprise (cloisonnement).
      * Deux entreprises, chacune a ses propres intervalles, aucun mélange.
      */
