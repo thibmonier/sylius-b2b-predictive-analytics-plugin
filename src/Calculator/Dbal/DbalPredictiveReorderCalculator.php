@@ -72,12 +72,8 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
      */
     private function fetchOrderDates(int $variantId, int $companyId): array
     {
-        // PROOF COMMIT: Break filters to prove tests detect it
-        $condition = str_replace(
-            ['co.company_id = :company AND ', " AND o.state <> 'cancelled'"],
-            '',
-            $this->countedOrderSql->counted(),
-        );
+        // Réutilise la définition des commandes comptées de company-insights
+        $countedCondition = $this->countedOrderSql->counted();
 
         $sql = <<<SQL
             SELECT DISTINCT o.checkout_completed_at
@@ -85,12 +81,13 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
             INNER JOIN tmonier_company_order co ON co.order_id = o.id
             INNER JOIN sylius_order_item i ON i.order_id = o.id
             WHERE i.variant_id = :variant_id
-              AND {$condition}
+              AND {$countedCondition}
               AND o.checkout_completed_at IS NOT NULL
             ORDER BY o.checkout_completed_at ASC
         SQL;
 
         $rows = $this->connection->fetchAllAssociative($sql, [
+            'company' => $companyId,
             'variant_id' => $variantId,
         ]);
 
