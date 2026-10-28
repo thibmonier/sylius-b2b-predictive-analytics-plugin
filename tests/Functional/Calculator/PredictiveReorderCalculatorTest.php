@@ -53,7 +53,7 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 20) . ' days');
-            $this->catalog()->order($customerAcme, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->catalog()->orderOfLines($customerAcme, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
         // Créer un customer pour BuildCo
@@ -63,17 +63,12 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         // Créer 3 commandes pour BuildCo (espacées de 30 jours)
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 30) . ' days');
-            $this->catalog()->order($customerBuildco, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->catalog()->orderOfLines($customerBuildco, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
         // Calculer pour Acme
         $resultAcme = $this->calculator->calculate($variant, $acme);
-        $acmeId = $acme->getId();
-        $variantId = $variant->getId();
-        self::assertIsInt($acmeId);
-        self::assertIsInt($variantId);
-        $diagnostic = $this->databaseStateForDiagnostic($acmeId, $variantId);
-        $this->assertSame(20.0, $resultAcme->medianIntervalDays, 'Acme doit avoir un intervalle médian de 20 jours. ' . $diagnostic);
+        $this->assertSame(20.0, $resultAcme->medianIntervalDays, 'Acme doit avoir un intervalle médian de 20 jours');
         $this->assertTrue($resultAcme->isPredicted(), 'Acme doit avoir une prédiction valide');
         $this->assertNull($resultAcme->reason, 'Acme ne doit pas avoir de raison d\'échec');
 
@@ -104,20 +99,15 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 2; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 15) . ' days');
-            $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
         $result = $this->calculator->calculate($variant, $company);
 
-        $companyId = $company->getId();
-        $variantId = $variant->getId();
-        self::assertIsInt($companyId);
-        self::assertIsInt($variantId);
-        $diagnostic = $this->databaseStateForDiagnostic($companyId, $variantId);
         $this->assertSame(PredictionFailureReason::INSUFFICIENT_HISTORY, $result->reason, 'La raison doit être INSUFFICIENT_HISTORY');
         $this->assertFalse($result->isPredicted(), 'Il ne doit pas y avoir de prédiction');
         $this->assertNull($result->medianIntervalDays, 'L\'intervalle médian doit être null');
-        $this->assertStringContainsString('commandée 2 fois', $result->explanation, 'L\'explication doit mentionner "commandée 2 fois". ' . $diagnostic);
+        $this->assertStringContainsString('commandée 2 fois', $result->explanation, 'L\'explication doit mentionner "commandée 2 fois"');
         $this->assertStringContainsString('3 commandes nécessaires', $result->explanation, 'L\'explication doit mentionner "3 commandes nécessaires"');
     }
 
@@ -141,22 +131,17 @@ final class PredictiveReorderCalculatorTest extends KernelTestCase
         $baseDate = new \DateTimeImmutable('2025-01-01 10:00:00');
         for ($i = 0; $i < 3; ++$i) {
             $orderDate = $baseDate->modify('+' . ($i * 25) . ' days');
-            $this->catalog()->order($customer, 10000, $orderDate->format('Y-m-d H:i:s'));
+            $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $orderDate->format('Y-m-d H:i:s'));
         }
 
         // 1 commande cancelled (ne doit PAS être comptée)
-        $this->catalog()->order($customer, 10000, $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
+        $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $baseDate->modify('+40 days')->format('Y-m-d H:i:s'), state: 'cancelled');
 
         $result = $this->calculator->calculate($variant, $company);
 
         // Si les 4 commandes étaient comptées, l'intervalle médian serait différent de 25
         // Avec seulement les 3 commandes completed, l'intervalle médian doit être 25.0
-        $companyId = $company->getId();
-        $variantId = $variant->getId();
-        self::assertIsInt($companyId);
-        self::assertIsInt($variantId);
-        $diagnostic = $this->databaseStateForDiagnostic($companyId, $variantId);
-        $this->assertSame(25.0, $result->medianIntervalDays, 'L\'intervalle médian doit être 25 jours (seules les 3 commandes completed comptent). ' . $diagnostic);
+        $this->assertSame(25.0, $result->medianIntervalDays, 'L\'intervalle médian doit être 25 jours (seules les 3 commandes completed comptent)');
         $this->assertTrue($result->isPredicted(), 'Il doit y avoir une prédiction valide');
         $this->assertNull($result->reason, 'Il ne doit pas y avoir de raison d\'échec');
         $this->assertStringContainsString('commandée 3 fois', $result->explanation, 'L\'explication doit mentionner "commandée 3 fois" (pas 4)');
