@@ -81,7 +81,8 @@
             "Tests\\Tmonier\\SyliusPredictiveAnalyticsPlugin\\": [
                 "tests/",
                 "tests/TestApplication/src/"
-            ]
+            ],
+            "Tests\\Tmonier\\SyliusCompanyInsightsPlugin\\": "vendor/tmonier/sylius-company-insights-plugin/tests/"
         }
     },
     "scripts": {
