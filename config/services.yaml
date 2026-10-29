@@ -25,6 +25,8 @@ services:
 
     # Contrôleur PrepareCart : injection des services Sylius par leurs IDs
     Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\PrepareCartController:
+        public: true
+        tags: ['controller.service_arguments']
         arguments:
             $orderRepository: '@sylius.repository.order'
             $orderItemFactory: '@sylius.factory.order_item'
