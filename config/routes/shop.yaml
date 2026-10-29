@@ -5,3 +5,12 @@ tmonier_predictive_shop_prepare_cart:
         _controller: Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\PrepareCartController
     requirements:
         variantId: \d+
+
+tmonier_predictive_shop_dismiss:
+    path: /predictive/dismiss/{variantId}/{type}
+    methods: [POST]
+    defaults:
+        _controller: Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\DismissPredictionController
+    requirements:
+        variantId: \d+
+        type: never|later

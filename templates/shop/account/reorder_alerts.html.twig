@@ -16,12 +16,26 @@
                         </strong>
                         <p class="reorder-alert__explanation">{{ alert.explanation }}</p>
                     </div>
-                    <form method="post" action="{{ path('tmonier_predictive_shop_prepare_cart', {'variantId': alert.variant.id}) }}" data-test="prepare-cart-form">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_prepare_cart') }}">
-                        <button type="submit" class="button" data-test="prepare-cart-button">
-                            Préparer le panier
-                        </button>
-                    </form>
+                    <div class="reorder-alert__actions">
+                        <form method="post" action="{{ path('tmonier_predictive_shop_prepare_cart', {'variantId': alert.variant.id}) }}" data-test="prepare-cart-form">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_prepare_cart') }}">
+                            <button type="submit" class="button" data-test="prepare-cart-button">
+                                Préparer le panier
+                            </button>
+                        </form>
+                        <form method="post" action="{{ path('tmonier_predictive_shop_dismiss', {'variantId': alert.variant.id, 'type': 'later'}) }}" data-test="dismiss-form-later">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_dismiss') }}">
+                            <button type="submit" class="button button--secondary">
+                                Pas maintenant
+                            </button>
+                        </form>
+                        <form method="post" action="{{ path('tmonier_predictive_shop_dismiss', {'variantId': alert.variant.id, 'type': 'never'}) }}" data-test="dismiss-form-never">
+                            <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_dismiss') }}">
+                            <button type="submit" class="button button--secondary">
+                                Ne plus proposer
+                            </button>
+                        </form>
+                    </div>
                 </div>
             {% endfor %}
         </div>

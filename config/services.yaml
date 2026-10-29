@@ -39,3 +39,11 @@ services:
             $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
             $orderModifier: '@sylius.modifier.order'
             $entityManager: '@sylius.manager.order'
+
+    # Contrôleur DismissPrediction : injection des services Sylius et de l'horloge
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\DismissPredictionController:
+        public: true
+        tags: ['controller.service_arguments']
+        arguments:
+            $variantRepository: '@sylius.repository.product_variant'
+            $clock: '@clock'

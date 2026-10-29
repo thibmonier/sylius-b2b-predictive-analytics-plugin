@@ -9,6 +9,7 @@ use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
+use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\DismissedPrediction;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\StoredPrediction;
 
 /**
@@ -54,17 +55,26 @@ final readonly class ReorderAlertProvider
         $sevenDaysFromNow = $now->modify('+7 days');
 
         // Requête DQL pour récupérer les prédictions avec échéance ≤ 7 jours
+        // Exclure les alertes masquées par le client courant
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('p')
             ->from(StoredPrediction::class, 'p')
             ->join('p.variant', 'v')
             ->join('v.product', 'product')
+            ->leftJoin(
+                DismissedPrediction::class,
+                'd',
+                'WITH',
+                'd.company = p.company AND d.variant = p.variant AND d.customer = :customer',
+            )
             ->where('p.company = :company')
             ->andWhere('p.medianIntervalDays IS NOT NULL')
             ->andWhere('p.lastOrderDate IS NOT NULL')
             ->andWhere('v.enabled = true')
             ->andWhere('product.enabled = true')
-            ->setParameter('company', $company);
+            ->andWhere('d.id IS NULL')
+            ->setParameter('company', $company)
+            ->setParameter('customer', $customer);
 
         /** @var list<StoredPrediction> $predictions */
         $predictions = $qb->getQuery()->getResult();
