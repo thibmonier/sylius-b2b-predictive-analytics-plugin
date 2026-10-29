@@ -1,0 +1,7 @@
+sylius_twig_hooks:
+    hooks:
+        # Bloc d'alertes de réassort dans « Mon compte » (priorité 200 : avant user_info qui a 100).
+        'sylius_shop.account.dashboard.index.content.main':
+            tmonier_predictive_reorder_alerts:
+                template: '@TmonierSyliusPredictiveAnalyticsPlugin/shop/account/reorder_alerts.html.twig'
+                priority: 200
