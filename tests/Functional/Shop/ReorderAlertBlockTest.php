@@ -62,10 +62,53 @@ final class ReorderAlertBlockTest extends WebTestCase
         // Visite de « Mon compte »
         $this->client->request('GET', $this->shopUrl('/account/dashboard'));
 
-        // Le bloc d'alertes doit être affiché
+        // Le bloc d'alertes doit être affiché avec son contenu
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes doit être affiché');
         self::assertSelectorTextContains('[data-test="reorder-alerts"]', 'À réassortir bientôt');
+
+        // La référence doit être affichée
+        self::assertSelectorExists('[data-test="reorder-alert-item"]', 'Une alerte doit être affichée');
+
+        // L'explication doit contenir le rythme (3 fois, 28 jours en médiane)
+        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', 'commandée 3 fois');
+        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', '28 jours en médiane');
+
+        // Le bouton « Préparer le panier » doit être affiché
+        self::assertSelectorExists('[data-test="prepare-cart-button"]', 'Le bouton "Préparer le panier" doit être affiché');
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_show_alert_block_when_no_reorder_expected_within_7_days(): void
+    {
+        $catalog = $this->catalog();
+        $company = $catalog->company('Acme');
+        $variant = $catalog->product('widget', [$catalog->localeCode() => 'Widget']);
+        $customer = $catalog->customer('claire');
+        $catalog->member($company, $customer);
+
+        // 3 commandes complétées espacées de 28 jours
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], '2025-01-01 10:00:00');
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], '2025-01-29 10:00:00');
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], '2025-02-26 10:00:00');
+        // Dernière commande : 2025-02-26
+        // Prochaine échéance attendue : 2025-03-26
+        // Si on est le 2025-03-01, l'échéance est dans 25 jours (> 7 jours)
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator->recalculateForCompany($company);
+
+        $this->loginShopUser($customer);
+
+        // Visite de « Mon compte » le 2025-03-01 (25 jours avant l'échéance)
+        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+
+        // Le bloc d'alertes ne doit PAS être affiché (aucune échéance dans les 7 jours)
+        self::assertResponseIsSuccessful();
+        self::assertSelectorNotExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes ne doit pas être affiché si aucune échéance dans les 7 jours');
     }
 
     /**
