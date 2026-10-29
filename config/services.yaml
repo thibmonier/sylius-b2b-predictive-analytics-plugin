@@ -13,6 +13,10 @@ services:
             $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
             $variantRepository: '@sylius.repository.product_variant'
 
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\MedianQuantityCalculator:
+        arguments:
+            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
+
     # Alias interface -> implémentation
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface:
         alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator
@@ -22,3 +26,24 @@ services:
     Tmonier\SyliusPredictiveAnalyticsPlugin\Command\RecalculatePredictionsCommand:
         arguments:
             $companyRepository: '@tmonier_company_accounts.repository.company'
+
+    # Contrôleur PrepareCart : injection des services Sylius par leurs IDs
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\PrepareCartController:
+        public: true
+        tags: ['controller.service_arguments']
+        arguments:
+            $cartContext: '@sylius.context.cart'
+            $channelRepository: '@sylius.repository.channel'
+            $customerRepository: '@sylius.repository.customer'
+            $orderItemFactory: '@sylius.factory.order_item'
+            $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
+            $orderModifier: '@sylius.modifier.order'
+            $entityManager: '@sylius.manager.order'
+
+    # Contrôleur DismissPrediction : injection des services Sylius et de l'horloge
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\DismissPredictionController:
+        public: true
+        tags: ['controller.service_arguments']
+        arguments:
+            $variantRepository: '@sylius.repository.product_variant'
+            $clock: '@clock'

@@ -57,7 +57,7 @@ final class RecalculatePredictionsCommandTest extends KernelTestCase
         }
 
         // Exécuter la commande
-        \assert(null !== self::$kernel);
+        \assert(self::$kernel instanceof \Symfony\Component\HttpKernel\KernelInterface);
         $application = new Application(self::$kernel);
         $command = $application->find('tmonier:predictive:recalculate');
         $tester = new CommandTester($command);

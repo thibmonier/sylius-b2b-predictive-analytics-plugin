@@ -1,2 +1,5 @@
-# Plugin routes
-# This plugin is backend-only and exposes no routes
+tmonier_predictive_analytics_shop:
+    resource: "routes/shop.yaml"
+    prefix: /{_locale}
+    requirements:
+        _locale: ^[a-z]{2}(?:_[A-Z]{2})?$

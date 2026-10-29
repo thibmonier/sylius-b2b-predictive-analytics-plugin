@@ -28,7 +28,7 @@ final class TmonierSyliusPredictiveAnalyticsExtension extends Extension implemen
                 'mappings' => [
                     'TmonierSyliusPredictiveAnalyticsPlugin' => [
                         'type' => 'attribute',
-                        'dir' => \dirname(__DIR__) . '/Entity',
+                        'dir' => __DIR__ . '/../Entity',
                         'prefix' => 'Tmonier\SyliusPredictiveAnalyticsPlugin\Entity',
                         'is_bundle' => false,
                     ],

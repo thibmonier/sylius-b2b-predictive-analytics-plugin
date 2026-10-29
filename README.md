@@ -37,7 +37,25 @@ Exécutez les migrations pour créer la table des prédictions :
 php bin/console doctrine:migrations:migrate
 ```
 
+Importez les routes du plugin dans `config/routes.yaml` :
+
+```yaml
+tmonier_predictive:
+    resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml'
+```
+
 ## Usage
+
+### Alertes de réassort dans « Mon compte »
+
+Le plugin affiche automatiquement un bloc « À réassortir bientôt » dans l'espace client pour les références dont la date de réassort attendue tombe dans les **7 prochains jours** (y compris les références en retard jusqu'à un intervalle médian).
+
+Chaque alerte propose :
+- Un bouton **« Préparer le panier »** qui pré-remplit le panier avec la quantité médiane habituelle
+- Un bouton **« Pas maintenant »** pour masquer temporairement l'alerte
+- Un bouton **« Ne plus proposer »** pour masquer définitivement cette référence
+
+Le cloisonnement par entreprise est strict : un acheteur ne voit que les alertes de son entreprise.
 
 ### Calcul d'une prédiction
 
