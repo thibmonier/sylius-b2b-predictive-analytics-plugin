@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Shop;
 
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
