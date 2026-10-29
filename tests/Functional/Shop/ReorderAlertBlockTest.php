@@ -66,14 +66,14 @@ final class ReorderAlertBlockTest extends WebTestCase
         // Le bloc d'alertes doit être affiché avec son contenu
         self::assertResponseIsSuccessful();
         self::assertSelectorExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes doit être affiché');
-        self::assertSelectorTextContains('[data-test="reorder-alerts"]', 'À réassortir bientôt');
+        self::assertSelectorTextContains('[data-test="reorder-alerts"]', 'Reorder soon');
 
         // La référence doit être affichée
         self::assertSelectorExists('[data-test="reorder-alert-item"]', 'Une alerte doit être affichée');
 
-        // L'explication doit contenir le rythme (3 fois, 28 jours en médiane)
-        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', 'commandée 3 fois');
-        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', '28 jours en médiane');
+        // L'explication doit contenir le rythme en anglais (ordered 3 times, every 28 days median)
+        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', 'ordered 3 times');
+        self::assertSelectorTextContains('[data-test="reorder-alert-item"]', 'every 28 days median');
 
         // Le bouton « Préparer le panier » doit être affiché
         self::assertSelectorExists('[data-test="prepare-cart-button"]', 'Le bouton "Préparer le panier" doit être affiché');
