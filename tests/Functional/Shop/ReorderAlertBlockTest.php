@@ -89,11 +89,11 @@ final class ReorderAlertBlockTest extends WebTestCase
         $catalog->member($company, $customer);
 
         // 3 commandes complétées espacées de 28 jours
-        // Dernière commande il y a 50 jours → échéance dans -22 jours (PASSÉE)
+        // Dernière commande il y a 2 jours → échéance dans 26 jours (LOINTAINE, > 7 jours)
         $now = new \DateTimeImmutable();
-        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-106 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-78 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-50 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-58 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-30 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-2 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
@@ -107,6 +107,39 @@ final class ReorderAlertBlockTest extends WebTestCase
         // Le bloc d'alertes ne doit PAS être affiché (aucune échéance dans les 7 jours)
         self::assertResponseIsSuccessful();
         self::assertSelectorNotExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes ne doit pas être affiché si aucune échéance dans les 7 jours');
+    }
+
+    /**
+     * @test
+     */
+    public function it_shows_alert_block_when_reorder_is_late(): void
+    {
+        $catalog = $this->catalog();
+        $company = $catalog->company('Acme');
+        $variant = $catalog->product('widget', [$catalog->localeCode() => 'Widget']);
+        $customer = $catalog->customer('claire');
+        $catalog->member($company, $customer);
+
+        // 3 commandes complétées espacées de 28 jours (médiane = 28 jours)
+        // Dernière commande il y a 30 jours → échéance il y a 2 jours (EN RETARD)
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-86 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-58 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-30 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator->recalculateForCompany($company);
+
+        $this->loginShopUser($customer);
+
+        // Visite de « Mon compte »
+        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+
+        // Le bloc d'alertes doit être affiché (référence EN RETARD de 2 jours)
+        self::assertResponseIsSuccessful();
+        self::assertSelectorExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes doit être affiché même si la référence est en retard');
+        self::assertSelectorExists('[data-test="reorder-alert-item"]', 'Une alerte en retard doit être affichée');
     }
 
     /**
