@@ -9,34 +9,32 @@
                 <div class="reorder-alert" data-test="reorder-alert-item">
                     <div class="reorder-alert__content">
                         <strong class="reorder-alert__product">
-                            {{ alert.variant.product.name }}
-                            {% if alert.variant.name %}
-                                - {{ alert.variant.name }}
-                            {% endif %}
+                            {{- alert.variant.product.name -}}
+                            {%- if alert.variant.name and alert.variant.name != alert.variant.product.name %} — {{ alert.variant.name }}{% endif -%}
                         </strong>
                         <p class="reorder-alert__explanation">
                             {{ 'tmonier_predictive.shop.reorder_alerts.explanation'|trans({
                                 '%count%': alert.orderCount,
-                                '%days%': (alert.medianIntervalDays|number_format(alert.medianIntervalDays == alert.medianIntervalDays|round ? 0 : 1))
+                                '%days%': alert.medianIntervalDays|format_number
                             }) }}
                         </p>
                     </div>
                     <div class="reorder-alert__actions">
                         <form method="post" action="{{ path('tmonier_predictive_shop_prepare_cart', {'variantId': alert.variant.id}) }}" data-test="prepare-cart-form">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_prepare_cart') }}">
-                            <button type="submit" class="button" data-test="prepare-cart-button">
+                            <button type="submit" class="btn btn-primary" data-test="prepare-cart-button">
                                 {{ 'tmonier_predictive.shop.reorder_alerts.prepare_cart'|trans }}
                             </button>
                         </form>
                         <form method="post" action="{{ path('tmonier_predictive_shop_dismiss', {'variantId': alert.variant.id, 'type': 'later'}) }}" data-test="dismiss-form-later">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_dismiss') }}">
-                            <button type="submit" class="button button--secondary">
+                            <button type="submit" class="btn btn-outline-gray">
                                 {{ 'tmonier_predictive.shop.reorder_alerts.dismiss_later'|trans }}
                             </button>
                         </form>
                         <form method="post" action="{{ path('tmonier_predictive_shop_dismiss', {'variantId': alert.variant.id, 'type': 'never'}) }}" data-test="dismiss-form-never">
                             <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_dismiss') }}">
-                            <button type="submit" class="button button--secondary">
+                            <button type="submit" class="btn btn-outline-gray">
                                 {{ 'tmonier_predictive.shop.reorder_alerts.dismiss_never'|trans }}
                             </button>
                         </form>
