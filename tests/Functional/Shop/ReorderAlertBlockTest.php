@@ -215,6 +215,7 @@ final class ReorderAlertBlockTest extends WebTestCase
         self::assertCount(1, $items, 'Le panier doit contenir exactement 1 ligne');
 
         $item = $items->first();
+        self::assertNotFalse($item, 'La collection doit contenir au moins un élément');
         self::assertSame($variant, $item->getVariant(), 'La variante doit être Widget');
         self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)');
     }
