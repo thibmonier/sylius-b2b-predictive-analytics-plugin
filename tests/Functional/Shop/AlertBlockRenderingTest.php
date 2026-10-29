@@ -147,11 +147,11 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         $variant = $catalog->product('widget', ['fr_FR' => 'Widget']);
 
-        // 3 orders spaced by 57 days (median 56.5 ≈ 57), last order 51 days ago → alert in 6 days
+        // 3 orders with intervals of 56 and 57 days → median 56.5, last order 52 days ago → alert in 4.5 days
         $now = new \DateTimeImmutable();
         $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-165 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-108 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-51 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-109 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
@@ -199,11 +199,11 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         $variant = $catalog->product('widget', ['en_US' => 'Widget']);
 
-        // 3 orders spaced by 57 days (median 56.5 ≈ 57), last order 51 days ago → alert in 6 days
+        // 3 orders with intervals of 56 and 57 days → median 56.5, last order 52 days ago → alert in 4.5 days
         $now = new \DateTimeImmutable();
         $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-165 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-108 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-51 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-109 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
@@ -245,23 +245,23 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         self::assertResponseIsSuccessful();
 
-        // "Prepare cart" button should have b2b-account__action with --solid modifier
+        // "Prepare cart" button should use Sylius standard btn btn-primary classes
         $prepareButton = $crawler->filter('[data-test="prepare-cart-button"]');
         self::assertCount(1, $prepareButton);
         self::assertTrue(
-            $prepareButton->first()->attr('class') === 'b2b-account__action b2b-account__action--solid',
-            'Prepare cart button should use b2b-account__action b2b-account__action--solid classes',
+            $prepareButton->first()->attr('class') === 'btn btn-primary',
+            'Prepare cart button should use btn btn-primary classes',
         );
 
-        // "Not now" and "Don't suggest again" buttons should have b2b-account__action with --outline modifier
+        // "Not now" and "Don't suggest again" buttons should use Sylius standard btn btn-outline-gray classes
         $dismissButtons = $crawler->filter('[data-test^="dismiss-form"] button');
         self::assertGreaterThanOrEqual(2, \count($dismissButtons));
 
         $dismissButtons->each(function ($button) {
             $class = $button->attr('class');
             self::assertNotNull($class, 'Button must have a class attribute');
-            self::assertStringContainsString('b2b-account__action', $class);
-            self::assertStringContainsString('b2b-account__action--outline', $class);
+            self::assertStringContainsString('btn', $class);
+            self::assertStringContainsString('btn-outline-gray', $class);
         });
     }
 
