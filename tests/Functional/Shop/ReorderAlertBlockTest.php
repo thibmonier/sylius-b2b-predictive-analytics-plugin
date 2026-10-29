@@ -220,6 +220,106 @@ final class ReorderAlertBlockTest extends WebTestCase
         self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)');
     }
 
+    /**
+     * @test
+     */
+    public function it_does_not_show_alerts_from_other_companies(): void
+    {
+        $catalog = $this->catalog();
+
+        // Deux entreprises
+        $acme = $catalog->company('Acme');
+        $buildCo = $catalog->company('BuildCo');
+
+        // Deux clients, chacun membre d'une entreprise différente
+        $claire = $catalog->customer('claire');
+        $catalog->member($acme, $claire);
+
+        $bob = $catalog->customer('bob');
+        $catalog->member($buildCo, $bob);
+
+        // Deux références
+        $widgetAcme = $catalog->product('widget-acme', [$catalog->localeCode() => 'Widget Acme']);
+        $widgetBuildCo = $catalog->product('widget-buildco', [$catalog->localeCode() => 'Widget BuildCo']);
+
+        $now = new \DateTimeImmutable();
+
+        // Acme : Widget Acme commandé 3 fois, échéance dans 4 jours
+        $catalog->orderOfLines($claire, [[$widgetAcme, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($claire, [[$widgetAcme, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($claire, [[$widgetAcme, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        // BuildCo : Widget BuildCo commandé 3 fois, échéance dans 4 jours
+        $catalog->orderOfLines($bob, [[$widgetBuildCo, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($bob, [[$widgetBuildCo, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($bob, [[$widgetBuildCo, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        // Recalcul des prédictions pour les deux entreprises
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($acme);
+        $calculator->recalculateForCompany($buildCo);
+
+        // Claire se connecte (membre d'Acme)
+        $this->loginShopUser($claire);
+        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+
+        self::assertResponseIsSuccessful();
+
+        // Claire doit voir l'alerte Widget Acme
+        self::assertSelectorTextContains('[data-test="reorder-alerts"]', 'Widget Acme');
+
+        // Claire ne doit PAS voir l'alerte Widget BuildCo (cloisonnement strict)
+        self::assertSelectorTextNotContains('[data-test="reorder-alerts"]', 'Widget BuildCo');
+    }
+
+    /**
+     * @test
+     */
+    public function it_does_not_show_disabled_variants(): void
+    {
+        $catalog = $this->catalog();
+        $company = $catalog->company('Acme');
+        $customer = $catalog->customer('claire');
+        $catalog->member($company, $customer);
+
+        // Deux références : une active, une désactivée
+        $activeVariant = $catalog->product('widget-active', [$catalog->localeCode() => 'Widget Active']);
+        $disabledVariant = $catalog->product('widget-disabled', [$catalog->localeCode() => 'Widget Disabled']);
+
+        $now = new \DateTimeImmutable();
+
+        // Les deux références ont un historique suffisant (échéance dans 4 jours)
+        $catalog->orderOfLines($customer, [[$activeVariant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$activeVariant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$activeVariant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        $catalog->orderOfLines($customer, [[$disabledVariant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$disabledVariant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$disabledVariant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        // Désactiver la variante Widget Disabled
+        $disabledVariant->setEnabled(false);
+        $this->entityManager()->flush();
+
+        // Recalcul des prédictions
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
+
+        // Connexion
+        $this->loginShopUser($customer);
+        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+
+        self::assertResponseIsSuccessful();
+
+        // L'alerte Widget Active doit être affichée
+        self::assertSelectorTextContains('[data-test="reorder-alerts"]', 'Widget Active');
+
+        // L'alerte Widget Disabled ne doit PAS être affichée (variante désactivée)
+        self::assertSelectorTextNotContains('[data-test="reorder-alerts"]', 'Widget Disabled');
+    }
+
     private function loginShopUser(CustomerInterface $customer): void
     {
         $user = $customer->getUser();
