@@ -99,8 +99,10 @@ final readonly class PrepareCartController
         // Persister le panier s'il est nouveau, avec un canal géré (le canal du contexte peut être détaché)
         if (null === $cart->getId()) {
             $channel = $cart->getChannel();
-            if (null !== $channel) {
-                $managedChannel = $this->channelRepository->findOneByCode($channel->getCode());
+            $channelCode = $channel?->getCode();
+
+            if (null !== $channelCode) {
+                $managedChannel = $this->channelRepository->findOneByCode($channelCode);
                 if ($managedChannel instanceof ChannelInterface) {
                     $cart->setChannel($managedChannel);
                 }
