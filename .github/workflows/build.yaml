@@ -1,0 +1,156 @@
+name: Build
+
+on:
+    push:
+        branches-ignore:
+            - 'dependabot/**'
+        paths-ignore:
+            - "*.md"
+    pull_request:
+        paths-ignore:
+            - "*.md"
+    release:
+        types: [created]
+    schedule:
+        -
+            cron: "0 1 * * 6" # Run at 1am every Saturday
+    workflow_dispatch: ~
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+# No default token permission: every job asks for what it needs (US-209).
+permissions: {}
+
+jobs:
+    tests:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+
+        name: "Sylius ${{ matrix.sylius }}, PHP ${{ matrix.php }}, Symfony ${{ matrix.symfony }}, ${{ matrix.database }}"
+
+        strategy:
+            fail-fast: false
+            # Sylius 2.2: PHP >= 8.2, Symfony 7.4 (no Symfony 8). Sylius 2.3: PHP >= 8.3,
+            # Symfony 7.4/8.0 (Symfony 8 needs PHP 8.4; API Platform 5 and UX 3 are tested there).
+            # PHP 8.5 job added for Sylius 2.3 (registre du 2026-10-28).
+            matrix:
+                php: ["8.3", "8.4"]
+                symfony: ["^7.4"]
+                sylius: ["~2.2.0", "~2.3.0"]
+                database: ["mysql:8.4"]
+                node: ["22.x"]
+
+                # Sylius 2.3 needs PHP ^8.3; Sylius 2.2 does not support Symfony 8.
+                exclude:
+                    - sylius: "~2.3.0"
+                      php: "8.2"
+                    - sylius: "~2.2.0"
+                      symfony: "^8.0"
+
+                include:
+                    - php: "8.2"
+                      symfony: "^7.4"
+                      sylius: "~2.2.0"
+                      database: "mysql:8.4"
+                      node: "22.x"
+                    - php: "8.4"
+                      symfony: "^8.0"
+                      sylius: "~2.3.0"
+                      database: "mysql:8.4"
+                      node: "22.x"
+                    - php: "8.4"
+                      symfony: "^7.4"
+                      sylius: "~2.2.0"
+                      database: "mariadb:11.4"
+                      node: "22.x"
+                    - php: "8.4"
+                      symfony: "^7.4"
+                      sylius: "~2.3.0"
+                      database: "postgres:17"
+                      node: "22.x"
+                    # PHP 8.5 on Sylius 2.3 (registre du 2026-10-28)
+                    - php: "8.5"
+                      symfony: "^7.4"
+                      sylius: "~2.3.0"
+                      database: "mysql:8.4"
+                      node: "22.x"
+
+        env:
+            APP_ENV: test
+
+        steps:
+            -
+                uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+                with:
+                    persist-credentials: false
+
+            -
+                name: Build Sylius Test Application
+                uses: SyliusLabs/BuildTestAppAction@c3b108b5f3c299c55f429a8cf0ed88734d4f4979 # v4.3.1
+                with:
+                    e2e_js: "yes"
+                    cache_key: "${{ runner.os }}-php-${{ matrix.php }}-composer-${{ hashFiles('**/composer.json') }}"
+                    cache_restore_key: "${{ runner.os }}-php-${{ matrix.php }}-composer-"
+                    database: "${{ matrix.database }}"
+                    node_version: "${{ matrix.node }}"
+                    php_version: "${{ matrix.php }}"
+                    sylius_version: "${{ matrix.sylius }}"
+                    symfony_version: "${{ matrix.symfony }}"
+
+            -
+                name: Audit of the PHP dependencies
+                run: composer audit --abandoned=report
+
+            -
+                name: Run static analysis
+                run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+
+            -
+                name: Check coding standard
+                run: vendor/bin/ecs check
+
+            -
+                name: Run unit tests
+                run: vendor/bin/phpunit --colors=always --testsuite=unit
+
+            -
+                name: Validate composer.json
+                run: composer validate --ansi --strict
+
+            -
+                name: Validate container
+                run: vendor/bin/console lint:container
+
+            -
+                name: Lint Twig and YAML
+                run: |
+                    vendor/bin/console lint:twig templates
+                    vendor/bin/console lint:yaml config translations tests/TestApplication/config --parse-tags
+
+            -
+                name: Validate Doctrine mapping
+                run: vendor/bin/console doctrine:schema:validate --skip-sync
+
+            -
+                name: Run Non-unit PHPUnit tests
+                run: vendor/bin/phpunit --colors=always --testsuite=non-unit
+
+    # Static audit of the workflows themselves (US-209). Version and image are pinned, no network.
+    zizmor:
+        name: Workflow audit (zizmor)
+        runs-on: ubuntu-latest
+        permissions:
+            contents: read
+        timeout-minutes: 10
+        env:
+            ZIZMOR_IMAGE: ghcr.io/zizmorcore/zizmor:1.31.1@sha256:42d409dbb851d4c5d35a058cf042b828bea1e3f2884378c526eb0974780e18d9
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: zizmor (offline)
+              run: docker run --rm -v "$PWD:/work" -w /work "$ZIZMOR_IMAGE" --offline .github
