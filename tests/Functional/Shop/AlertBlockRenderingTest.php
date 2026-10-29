@@ -6,11 +6,9 @@ namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Shop;
 
 use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\ProductInterface;
-use Sylius\Component\Core\Model\ProductVariantInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
-use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 
 /**
  * US-240: Tests the reorder alerts block rendering in customer account.
@@ -57,7 +55,15 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant->setName('Safety Vest'); // Same as product
         $this->entityManager()->flush();
 
-        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
+        // 3 orders spaced by 28 days, last order 24 days ago → alert in 4 days
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -88,7 +94,15 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant->setName('Yellow Class 2');
         $this->entityManager()->flush();
 
-        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
+        // 3 orders spaced by 28 days, last order 24 days ago → alert in 4 days
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -111,14 +125,37 @@ final class AlertBlockRenderingTest extends WebTestCase
     public function it_formats_median_interval_with_french_locale(): void
     {
         $catalog = $this->catalog();
+
+        // Add fr_FR locale to channel
+        $channel = $catalog->channel();
+        $localeRepository = $this->entityManager()->getRepository(\Sylius\Component\Locale\Model\LocaleInterface::class);
+        $frLocale = $localeRepository->findOneBy(['code' => 'fr_FR']);
+        if (null === $frLocale) {
+            /** @var \Sylius\Resource\Factory\FactoryInterface<\Sylius\Component\Locale\Model\LocaleInterface> $localeFactory */
+            $localeFactory = self::getContainer()->get('sylius.factory.locale');
+            $frLocale = $localeFactory->createNew();
+            $frLocale->setCode('fr_FR');
+            $this->entityManager()->persist($frLocale);
+            $this->entityManager()->flush();
+        }
+        $channel->addLocale($frLocale);
+        $this->entityManager()->flush();
+
         $company = $catalog->company('Acme');
         $customer = $catalog->customer('claire');
         $catalog->member($company, $customer);
 
         $variant = $catalog->product('widget', ['fr_FR' => 'Widget']);
 
-        // Median with decimal: 56.5 days → should display as "56,5" in French
-        $this->createAlertWithMedian($customer, $variant, 56.5, $company);
+        // 3 orders spaced by 57 days (median 56.5 ≈ 57), last order 51 days ago → alert in 6 days
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-165 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-108 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-51 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', '/fr_FR/account/dashboard');
@@ -140,14 +177,37 @@ final class AlertBlockRenderingTest extends WebTestCase
     public function it_formats_median_interval_with_english_locale(): void
     {
         $catalog = $this->catalog();
+
+        // Add en_US locale to channel
+        $channel = $catalog->channel();
+        $localeRepository = $this->entityManager()->getRepository(\Sylius\Component\Locale\Model\LocaleInterface::class);
+        $enLocale = $localeRepository->findOneBy(['code' => 'en_US']);
+        if (null === $enLocale) {
+            /** @var \Sylius\Resource\Factory\FactoryInterface<\Sylius\Component\Locale\Model\LocaleInterface> $localeFactory */
+            $localeFactory = self::getContainer()->get('sylius.factory.locale');
+            $enLocale = $localeFactory->createNew();
+            $enLocale->setCode('en_US');
+            $this->entityManager()->persist($enLocale);
+            $this->entityManager()->flush();
+        }
+        $channel->addLocale($enLocale);
+        $this->entityManager()->flush();
+
         $company = $catalog->company('Acme');
         $customer = $catalog->customer('claire');
         $catalog->member($company, $customer);
 
         $variant = $catalog->product('widget', ['en_US' => 'Widget']);
 
-        // Median with decimal: 56.5 days → should display as "56.5" in English
-        $this->createAlertWithMedian($customer, $variant, 56.5, $company);
+        // 3 orders spaced by 57 days (median 56.5 ≈ 57), last order 51 days ago → alert in 6 days
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-165 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-108 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-51 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', '/en_US/account/dashboard');
@@ -169,7 +229,16 @@ final class AlertBlockRenderingTest extends WebTestCase
         $catalog->member($company, $customer);
 
         $variant = $catalog->product('widget', [$catalog->localeCode() => 'Widget']);
-        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
+
+        // 3 orders spaced by 28 days, last order 24 days ago → alert in 4 days
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
+        $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
         $crawler = $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -194,24 +263,6 @@ final class AlertBlockRenderingTest extends WebTestCase
             self::assertStringContainsString('b2b-account__action', $class);
             self::assertStringContainsString('b2b-account__action--outline', $class);
         });
-    }
-
-    private function createAlertWithMedian(CustomerInterface $customer, ProductVariantInterface $variant, float $medianDays, CompanyInterface $company): void
-    {
-        $now = new \DateTimeImmutable();
-        $intervalDays = (int) $medianDays;
-
-        // 3 orders spaced by the median interval
-        // Last order positioned to have alert within 7 days
-        $catalog = $this->catalog();
-        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify("-{$intervalDays} days")->modify('-56 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify("-{$intervalDays} days")->modify('-28 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
-
-        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
-        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
-
-        $calculator->recalculateForCompany($company);
     }
 
     private function loginShopUser(CustomerInterface $customer): void
