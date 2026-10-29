@@ -163,6 +163,54 @@ final class ReorderAlertBlockTest extends WebTestCase
         self::assertSelectorNotExists('[data-test="reorder-alerts"]', 'Le bloc d\'alertes ne doit pas être affiché pour un client sans entreprise');
     }
 
+    /**
+     * @test
+     */
+    public function it_prepares_cart_with_median_quantity_when_button_clicked(): void
+    {
+        $catalog = $this->catalog();
+        $company = $catalog->company('Acme');
+        $variant = $catalog->product('widget', [$catalog->localeCode() => 'Widget']);
+        $customer = $catalog->customer('claire');
+        $catalog->member($company, $customer);
+
+        // 3 commandes avec quantités différentes : 2, 5, 3 → médiane = 3
+        $now = new \DateTimeImmutable();
+        $catalog->orderOfLines($customer, [[$variant, 2, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 5, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 3, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+
+        /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
+        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator->recalculateForCompany($company);
+
+        $this->loginShopUser($customer);
+
+        // Génération du jeton CSRF
+        /** @var \Symfony\Component\Security\Csrf\CsrfTokenManagerInterface $csrfTokenManager */
+        $csrfTokenManager = self::getContainer()->get('security.csrf.token_manager');
+        $csrfToken = $csrfTokenManager->getToken('tmonier_predictive_prepare_cart')->getValue();
+
+        // POST sur la route "Préparer le panier"
+        $variantId = $variant->getId();
+        self::assertIsInt($variantId);
+
+        $this->client->request('POST', $this->shopUrl(sprintf('/predictive/prepare-cart/%d', $variantId)), [
+            '_csrf_token' => $csrfToken,
+        ]);
+
+        // La réponse doit être une redirection vers le panier
+        self::assertResponseRedirects($this->shopUrl('/cart'));
+
+        // Suivre la redirection et vérifier le contenu du panier
+        $this->client->followRedirect();
+        self::assertResponseIsSuccessful();
+
+        // Le panier doit contenir la référence avec la quantité médiane (3)
+        self::assertSelectorTextContains('.sylius-cart-items', 'Widget');
+        self::assertSelectorTextContains('.sylius-cart-items', '3'); // Quantité médiane
+    }
+
     private function loginShopUser(CustomerInterface $customer): void
     {
         $user = $customer->getUser();
