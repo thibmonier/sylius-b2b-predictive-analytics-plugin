@@ -29,6 +29,7 @@ services:
         tags: ['controller.service_arguments']
         arguments:
             $cartContext: '@sylius.context.cart'
+            $channelRepository: '@sylius.repository.channel'
             $orderItemFactory: '@sylius.factory.order_item'
             $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
             $orderModifier: '@sylius.modifier.order'

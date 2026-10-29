@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Order\Context\CartContextInterface;
@@ -28,11 +31,15 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\StoredPrediction;
  */
 final readonly class PrepareCartController
 {
+    /**
+     * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
+     */
     public function __construct(
         private Security $security,
         private EntityManagerInterface $entityManager,
         private CsrfTokenManagerInterface $csrfTokenManager,
         private CartContextInterface $cartContext,
+        private ChannelRepositoryInterface $channelRepository,
         private FactoryInterface $orderItemFactory,
         private OrderItemQuantityModifierInterface $orderItemQuantityModifier,
         private OrderModifierInterface $orderModifier,
@@ -85,8 +92,17 @@ final readonly class PrepareCartController
         // Récupération ou création du panier (le contexte crée un panier si nécessaire)
         $cart = $this->cartContext->getCart();
 
-        // Persister le panier s'il est nouveau
+        if (!$cart instanceof OrderInterface) {
+            throw new NotFoundHttpException('Cart not found.');
+        }
+
+        // Persister le panier s'il est nouveau, avec un canal géré (le canal du contexte peut être détaché)
         if (null === $cart->getId()) {
+            $managedChannel = $this->channelRepository->findOneByCode($cart->getChannel()->getCode());
+            if ($managedChannel instanceof ChannelInterface) {
+                $cart->setChannel($managedChannel);
+            }
+
             $this->entityManager->persist($cart);
         }
 
