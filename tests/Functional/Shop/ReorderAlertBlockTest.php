@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Shop;
 
 use Sylius\Component\Core\Model\CustomerInterface;
-use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -215,7 +214,7 @@ final class ReorderAlertBlockTest extends WebTestCase
 
         $item = $items->first();
         self::assertSame($variant, $item->getVariant(), 'La variante doit être Widget');
-        self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)')
+        self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)');
     }
 
     private function loginShopUser(CustomerInterface $customer): void
