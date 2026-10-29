@@ -48,9 +48,9 @@ final class ReorderAlertBlockTest extends WebTestCase
         // 3 commandes complétées espacées de 28 jours (médiane = 28 jours)
         // Dernière commande il y a 24 jours → échéance dans 4 jours (28 - 24 = 4)
         $now = new \DateTimeImmutable();
-        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
 
         // Recalcul de la prédiction
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
@@ -93,9 +93,9 @@ final class ReorderAlertBlockTest extends WebTestCase
         // 3 commandes complétées espacées de 28 jours
         // Dernière commande il y a 2 jours → échéance dans 26 jours (LOINTAINE, > 7 jours)
         $now = new \DateTimeImmutable();
-        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-58 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-30 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-2 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-58 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-30 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-2 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
@@ -125,9 +125,9 @@ final class ReorderAlertBlockTest extends WebTestCase
         // 3 commandes complétées espacées de 28 jours (médiane = 28 jours)
         // Dernière commande il y a 30 jours → échéance il y a 2 jours (EN RETARD)
         $now = new \DateTimeImmutable();
-        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-86 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-58 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-30 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 1, 10000]], $now->modify('-86 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 12000]], $now->modify('-58 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-30 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
@@ -178,9 +178,9 @@ final class ReorderAlertBlockTest extends WebTestCase
 
         // 3 commandes avec quantités différentes : 2, 5, 3 → médiane = 3
         $now = new \DateTimeImmutable();
-        $catalog->orderOfLines($customer, [[$variant, 2, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 5, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'));
-        $catalog->orderOfLines($customer, [[$variant, 3, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
+        $catalog->orderOfLines($customer, [[$variant, 2, 10000]], $now->modify('-80 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 5, 12000]], $now->modify('-52 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
+        $catalog->orderOfLines($customer, [[$variant, 3, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'), 'EUR', 'fulfilled');
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
