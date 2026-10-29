@@ -13,6 +13,10 @@ services:
             $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
             $variantRepository: '@sylius.repository.product_variant'
 
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\MedianQuantityCalculator:
+        arguments:
+            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
+
     # Alias interface -> implémentation
     Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface:
         alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\Dbal\DbalPredictiveReorderCalculator
