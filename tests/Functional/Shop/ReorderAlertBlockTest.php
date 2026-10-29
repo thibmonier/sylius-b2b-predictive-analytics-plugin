@@ -186,18 +186,16 @@ final class ReorderAlertBlockTest extends WebTestCase
 
         $this->loginShopUser($customer);
 
-        // Génération du jeton CSRF
-        /** @var \Symfony\Component\Security\Csrf\CsrfTokenManagerInterface $csrfTokenManager */
-        $csrfTokenManager = self::getContainer()->get('security.csrf.token_manager');
-        $csrfToken = $csrfTokenManager->getToken('tmonier_predictive_prepare_cart')->getValue();
+        // GET du tableau de bord
+        $crawler = $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+        self::assertResponseIsSuccessful();
 
-        // POST sur la route "Préparer le panier"
-        $variantId = $variant->getId();
-        self::assertIsInt($variantId);
+        // Le bouton "Préparer le panier" doit être affiché
+        self::assertSelectorExists('[data-test="prepare-cart-button"]', 'Le bouton "Préparer le panier" doit être affiché');
 
-        $this->client->request('POST', $this->shopUrl(sprintf('/predictive/prepare-cart/%d', $variantId)), [
-            '_csrf_token' => $csrfToken,
-        ]);
+        // Soumission du formulaire via le crawler (jeton CSRF inclus)
+        $form = $crawler->filter('[data-test="prepare-cart-form"]')->form();
+        $this->client->submit($form);
 
         // La réponse doit être une redirection vers le panier
         self::assertResponseRedirects($this->shopUrl('/cart'));
