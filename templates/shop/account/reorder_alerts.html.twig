@@ -14,7 +14,12 @@
                                 - {{ alert.variant.name }}
                             {% endif %}
                         </strong>
-                        <p class="reorder-alert__explanation">{{ alert.explanation }}</p>
+                        <p class="reorder-alert__explanation">
+                            {{ 'tmonier_predictive.shop.reorder_alerts.explanation'|trans({
+                                '%count%': alert.orderCount,
+                                '%days%': (alert.medianIntervalDays|number_format(alert.medianIntervalDays == alert.medianIntervalDays|round ? 0 : 1))
+                            }) }}
+                        </p>
                     </div>
                     <div class="reorder-alert__actions">
                         <form method="post" action="{{ path('tmonier_predictive_shop_prepare_cart', {'variantId': alert.variant.id}) }}" data-test="prepare-cart-form">

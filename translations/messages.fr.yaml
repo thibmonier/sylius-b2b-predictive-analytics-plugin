@@ -5,3 +5,4 @@ tmonier_predictive:
             prepare_cart: 'Préparer le panier'
             dismiss_later: 'Pas maintenant'
             dismiss_never: 'Ne plus proposer'
+            explanation: 'commandée %count% fois, tous les %days% jours en médiane'
