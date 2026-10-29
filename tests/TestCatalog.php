@@ -24,11 +24,11 @@ use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
 use Sylius\Component\Product\Factory\ProductFactoryInterface;
 use Sylius\Resource\Factory\FactoryInterface;
+use Symfony\Component\Uid\Uuid;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyAddressInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Factory\CompanyMemberFactoryInterface;
-use Symfony\Component\Uid\Uuid;
 use Webmozart\Assert\Assert;
 
 /**

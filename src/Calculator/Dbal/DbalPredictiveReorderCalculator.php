@@ -140,7 +140,6 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
         );
     }
 
-
     /**
      * Récupère les IDs de toutes les variantes commandées par l'entreprise.
      *
