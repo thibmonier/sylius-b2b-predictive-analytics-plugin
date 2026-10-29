@@ -7,9 +7,11 @@ namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop;
 use Doctrine\ORM\EntityManagerInterface;
 use Sylius\Component\Channel\Repository\ChannelRepositoryInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
+use Sylius\Component\Core\Repository\CustomerRepositoryInterface;
 use Sylius\Component\Order\Context\CartContextInterface;
 use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
@@ -33,6 +35,7 @@ final readonly class PrepareCartController
 {
     /**
      * @param ChannelRepositoryInterface<ChannelInterface> $channelRepository
+     * @param CustomerRepositoryInterface<CustomerInterface> $customerRepository
      */
     public function __construct(
         private Security $security,
@@ -40,6 +43,7 @@ final readonly class PrepareCartController
         private CsrfTokenManagerInterface $csrfTokenManager,
         private CartContextInterface $cartContext,
         private ChannelRepositoryInterface $channelRepository,
+        private CustomerRepositoryInterface $customerRepository,
         private FactoryInterface $orderItemFactory,
         private OrderItemQuantityModifierInterface $orderItemQuantityModifier,
         private OrderModifierInterface $orderModifier,
@@ -96,8 +100,9 @@ final readonly class PrepareCartController
             throw new NotFoundHttpException('Cart not found.');
         }
 
-        // Persister le panier s'il est nouveau, avec un canal géré (le canal du contexte peut être détaché)
+        // Persister le panier s'il est nouveau, avec canal et client gérés (le contexte peut retourner des entités détachées)
         if (null === $cart->getId()) {
+            // Relire le canal géré
             $channel = $cart->getChannel();
             $channelCode = $channel?->getCode();
 
@@ -105,6 +110,18 @@ final readonly class PrepareCartController
                 $managedChannel = $this->channelRepository->findOneByCode($channelCode);
                 if ($managedChannel instanceof ChannelInterface) {
                     $cart->setChannel($managedChannel);
+                }
+            }
+
+            // Relire le client géré (évite doublon sur l'email)
+            $cartCustomer = $cart->getCustomer();
+            if ($cartCustomer instanceof \Sylius\Component\Customer\Model\CustomerInterface) {
+                $customerId = $cartCustomer->getId();
+                if (null !== $customerId) {
+                    $managedCustomer = $this->customerRepository->find($customerId);
+                    if ($managedCustomer instanceof CustomerInterface) {
+                        $cart->setCustomer($managedCustomer);
+                    }
                 }
             }
 
