@@ -3,3 +3,6 @@ tmonier_sylius_company_accounts:
 
 tmonier_sylius_company_insights:
     resource: "@TmonierSyliusCompanyInsightsPlugin/config/routes.yaml"
+
+tmonier_sylius_predictive_analytics:
+    resource: "@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml"
