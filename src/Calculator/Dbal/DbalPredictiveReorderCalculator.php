@@ -10,6 +10,7 @@ use Sylius\Component\Core\Model\ProductVariantInterface;
 use Sylius\Component\Product\Repository\ProductVariantRepositoryInterface;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 use Tmonier\SyliusCompanyInsightsPlugin\Statistics\CountedOrderSql;
+use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\IntervalCalculator;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\StoredPrediction;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\ValueObject\ReorderPrediction;
@@ -56,8 +57,8 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
             return ReorderPrediction::insufficientHistory(count($dates));
         }
 
-        $intervals = $this->calculateIntervals($dates);
-        $medianIntervalDays = $this->calculateMedian($intervals);
+        $intervals = IntervalCalculator::calculateIntervals($dates);
+        $medianIntervalDays = IntervalCalculator::calculateMedian($intervals);
         $lastOrderDate = end($dates);
 
         return ReorderPrediction::predicted(
@@ -139,48 +140,6 @@ final readonly class DbalPredictiveReorderCalculator implements PredictiveReorde
         );
     }
 
-    /**
-     * Calcule les intervalles en jours entre commandes successives.
-     *
-     * @param list<\DateTimeImmutable> $dates Dates triées par ordre chronologique
-     *
-     * @return list<int> Intervalles en jours
-     */
-    private function calculateIntervals(array $dates): array
-    {
-        $intervals = [];
-
-        for ($i = 1, $count = count($dates); $i < $count; ++$i) {
-            $interval = $dates[$i]->diff($dates[$i - 1])->days;
-            $intervals[] = $interval;
-        }
-
-        return $intervals;
-    }
-
-    /**
-     * Calcule la médiane d'un tableau d'entiers.
-     *
-     * @param list<int> $values
-     *
-     * @return float Médiane (peut être décimale : 21.5)
-     */
-    private function calculateMedian(array $values): float
-    {
-        sort($values);
-        $count = count($values);
-
-        if (0 === $count % 2) {
-            // Nombre pair : moyenne des deux valeurs centrales (pas arrondie)
-            $mid1 = $values[$count / 2 - 1];
-            $mid2 = $values[$count / 2];
-
-            return ($mid1 + $mid2) / 2;
-        }
-
-        // Nombre impair : valeur centrale
-        return (float) $values[(int) floor($count / 2)];
-    }
 
     /**
      * Récupère les IDs de toutes les variantes commandées par l'entreprise.
