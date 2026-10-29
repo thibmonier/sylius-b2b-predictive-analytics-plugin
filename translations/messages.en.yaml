@@ -1,0 +1,7 @@
+tmonier_predictive:
+    shop:
+        reorder_alerts:
+            title: 'Reorder soon'
+            prepare_cart: 'Prepare cart'
+            dismiss_later: 'Not now'
+            dismiss_never: 'Never show again'
