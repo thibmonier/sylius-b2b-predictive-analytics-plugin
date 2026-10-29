@@ -10,6 +10,7 @@ use Sylius\Component\Core\Model\ProductVariantInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
+use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyInterface;
 
 /**
  * US-240: Tests the reorder alerts block rendering in customer account.
@@ -56,7 +57,7 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant->setName('Safety Vest'); // Same as product
         $this->entityManager()->flush();
 
-        $this->createAlertWithMedian($customer, $variant, 50.0);
+        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -87,7 +88,7 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant->setName('Yellow Class 2');
         $this->entityManager()->flush();
 
-        $this->createAlertWithMedian($customer, $variant, 50.0);
+        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
 
         $this->loginShopUser($customer);
         $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -109,7 +110,7 @@ final class AlertBlockRenderingTest extends WebTestCase
      */
     public function it_formats_median_interval_with_french_locale(): void
     {
-        $catalog = $this->catalog('fr_FR');
+        $catalog = $this->catalog();
         $company = $catalog->company('Acme');
         $customer = $catalog->customer('claire');
         $catalog->member($company, $customer);
@@ -117,10 +118,10 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant = $catalog->product('widget', ['fr_FR' => 'Widget']);
 
         // Median with decimal: 56.5 days → should display as "56,5" in French
-        $this->createAlertWithMedian($customer, $variant, 56.5);
+        $this->createAlertWithMedian($customer, $variant, 56.5, $company);
 
         $this->loginShopUser($customer);
-        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+        $this->client->request('GET', '/fr_FR/account/dashboard');
 
         self::assertResponseIsSuccessful();
 
@@ -138,7 +139,7 @@ final class AlertBlockRenderingTest extends WebTestCase
      */
     public function it_formats_median_interval_with_english_locale(): void
     {
-        $catalog = $this->catalog('en_US');
+        $catalog = $this->catalog();
         $company = $catalog->company('Acme');
         $customer = $catalog->customer('claire');
         $catalog->member($company, $customer);
@@ -146,10 +147,10 @@ final class AlertBlockRenderingTest extends WebTestCase
         $variant = $catalog->product('widget', ['en_US' => 'Widget']);
 
         // Median with decimal: 56.5 days → should display as "56.5" in English
-        $this->createAlertWithMedian($customer, $variant, 56.5);
+        $this->createAlertWithMedian($customer, $variant, 56.5, $company);
 
         $this->loginShopUser($customer);
-        $this->client->request('GET', $this->shopUrl('/account/dashboard'));
+        $this->client->request('GET', '/en_US/account/dashboard');
 
         self::assertResponseIsSuccessful();
 
@@ -168,7 +169,7 @@ final class AlertBlockRenderingTest extends WebTestCase
         $catalog->member($company, $customer);
 
         $variant = $catalog->product('widget', [$catalog->localeCode() => 'Widget']);
-        $this->createAlertWithMedian($customer, $variant, 50.0);
+        $this->createAlertWithMedian($customer, $variant, 50.0, $company);
 
         $this->loginShopUser($customer);
         $crawler = $this->client->request('GET', $this->shopUrl('/account/dashboard'));
@@ -194,7 +195,7 @@ final class AlertBlockRenderingTest extends WebTestCase
         }
     }
 
-    private function createAlertWithMedian(CustomerInterface $customer, ProductVariantInterface $variant, float $medianDays): void
+    private function createAlertWithMedian(CustomerInterface $customer, ProductVariantInterface $variant, float $medianDays, CompanyInterface $company): void
     {
         $now = new \DateTimeImmutable();
         $intervalDays = (int) $medianDays;
@@ -208,8 +209,8 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
-        $company = $catalog->companyOf($customer);
-        self::assertNotNull($company);
+        
+        
         $calculator->recalculateForCompany($company);
     }
 
