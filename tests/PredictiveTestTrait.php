@@ -6,7 +6,6 @@ namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin;
 
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
-use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\TestCatalog;
 
 /** Every test runs in a transaction rolled back at the end. */
 trait PredictiveTestTrait
