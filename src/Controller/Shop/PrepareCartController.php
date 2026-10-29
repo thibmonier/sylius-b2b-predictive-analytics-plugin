@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Sylius\Component\Channel\Context\ChannelContextInterface;
-use Sylius\Component\Core\Model\ChannelInterface;
 use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
-use Sylius\Component\Core\Repository\OrderRepositoryInterface;
+use Sylius\Component\Order\Context\CartContextInterface;
 use Sylius\Component\Order\Modifier\OrderItemQuantityModifierInterface;
 use Sylius\Component\Order\Modifier\OrderModifierInterface;
 use Sylius\Component\Resource\Factory\FactoryInterface;
@@ -32,15 +30,11 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\StoredPrediction;
  */
 final readonly class PrepareCartController
 {
-    /**
-     * @param OrderRepositoryInterface<OrderInterface> $orderRepository
-     */
     public function __construct(
         private Security $security,
         private EntityManagerInterface $entityManager,
         private CsrfTokenManagerInterface $csrfTokenManager,
-        private ChannelContextInterface $channelContext,
-        private OrderRepositoryInterface $orderRepository,
+        private CartContextInterface $cartContext,
         private FactoryInterface $orderItemFactory,
         private OrderItemQuantityModifierInterface $orderItemQuantityModifier,
         private OrderModifierInterface $orderModifier,
@@ -90,17 +84,12 @@ final readonly class PrepareCartController
         // Calcul de la quantité médiane
         $medianQuantity = $this->medianQuantityCalculator->calculate($company, $variant);
 
-        // Récupération du canal actuel
-        $channel = $this->channelContext->getChannel();
-        if (!$channel instanceof ChannelInterface) {
-            throw new NotFoundHttpException('Channel not found.');
-        }
+        // Récupération ou création du panier (le contexte crée un panier si nécessaire)
+        $cart = $this->cartContext->getCart();
 
-        // Récupération ou création du panier
-        /** @var OrderInterface|null $cart */
-        $cart = $this->orderRepository->findCartByChannel($customer, $channel);
-        if (null === $cart) {
-            throw new NotFoundHttpException('Cart not found.');
+        // Persister le panier s'il est nouveau
+        if (null === $cart->getId()) {
+            $this->entityManager->persist($cart);
         }
 
         // Ajout au panier
