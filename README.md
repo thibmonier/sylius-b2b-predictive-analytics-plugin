@@ -1,20 +1,27 @@
-# Plugin prédictif de réassort pour Sylius
+# Sylius B2B Predictive Analytics Plugin
 
-Plugin Sylius 2 qui calcule automatiquement les rythmes de réassort par entreprise et référence, pour anticiper les besoins d'achat avant la rupture de stock.
+> Français : [README.fr.md](README.fr.md) <!-- vitrine:lang -->
 
-## Fonctionnalités
+Predictive reorder analytics for [Sylius](https://sylius.com) 2 B2B: calculates reorder patterns per company and product reference to anticipate purchase needs before stock runs out.
 
-- **Calcul d'intervalle médian** : analyse l'historique de commandes pour déterminer le rythme d'achat typique de chaque référence par entreprise
-- **Prédiction explicable** : conserve l'explication du calcul (« commandée 5 fois, tous les 28 jours en médiane »)
-- **Date de réassort attendue** : estime la prochaine date de commande selon le rythme habituel
-- **Commande de recalcul** : mise à jour de toutes les prédictions en une commande planifiable
+Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) (companies, members, roles) and [`tmonier/sylius-company-insights-plugin`](https://github.com/thibmonier/sylius-company-insights-plugin) (purchasing dashboard).
 
-## Prérequis
+## What it does
 
-- PHP 8.2 ou supérieur
-- Sylius 2.2.9 ou 2.3+
-- Plugin [company-accounts](https://github.com/thibmonier/sylius-company-accounts-plugin) (^1.1) installé
-- Plugin [company-insights](https://github.com/thibmonier/sylius-company-insights-plugin) (^0.2) installé
+- **Median interval calculation**: analyzes order history to determine the typical purchase rhythm for each product reference per company
+- **Explainable prediction**: keeps the calculation explanation ("ordered 5 times, every 28 days on median")
+- **Expected reorder date**: estimates the next order date based on usual rhythm
+- **Reorder alerts in customer account**: displays a "To reorder soon" block for products with expected reorder date within the next **7 days** (including overdue items up to one median interval)
+- **Pre-fill cart**: "Prepare cart" button adds the typical median quantity to cart
+- **Dismiss alerts**: "Not now" (temporary) or "Don't suggest again" (permanent) buttons
+- **Recalculation command**: updates all predictions with a schedulable command
+
+## Prerequisites
+
+- PHP 8.2 or higher
+- Sylius 2.2.9 or 2.3+
+- [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonier/sylius-company-accounts-plugin) ^1.1 installed
+- [`tmonier/sylius-company-insights-plugin`](https://github.com/thibmonier/sylius-company-insights-plugin) ^0.2 installed
 
 ## Installation
 
@@ -22,42 +29,39 @@ Plugin Sylius 2 qui calcule automatiquement les rythmes de réassort par entrepr
 composer require tmonier/sylius-b2b-predictive-analytics-plugin
 ```
 
-Activez le plugin dans `config/bundles.php` :
+1. Enable the plugin in `config/bundles.php`:
 
-```php
-return [
-    // ...
+    ```php
     Tmonier\SyliusPredictiveAnalyticsPlugin\TmonierSyliusPredictiveAnalyticsPlugin::class => ['all' => true],
-];
-```
+    ```
 
-Exécutez les migrations pour créer la table des prédictions :
+2. Run migrations to create the predictions table:
 
-```bash
-php bin/console doctrine:migrations:migrate
-```
+    ```bash
+    php bin/console doctrine:migrations:migrate
+    ```
 
-Importez les routes du plugin dans `config/routes.yaml` :
+3. Import the routes in `config/routes.yaml`:
 
-```yaml
-tmonier_predictive:
-    resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml'
-```
+    ```yaml
+    tmonier_predictive:
+        resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml'
+    ```
 
 ## Usage
 
-### Alertes de réassort dans « Mon compte »
+### Reorder alerts in customer account
 
-Le plugin affiche automatiquement un bloc « À réassortir bientôt » dans l'espace client pour les références dont la date de réassort attendue tombe dans les **7 prochains jours** (y compris les références en retard jusqu'à un intervalle médian).
+The plugin automatically displays a "To reorder soon" block in the customer area for product references with expected reorder date within the next **7 days** (including overdue items up to one median interval).
 
-Chaque alerte propose :
-- Un bouton **« Préparer le panier »** qui pré-remplit le panier avec la quantité médiane habituelle
-- Un bouton **« Pas maintenant »** pour masquer temporairement l'alerte
-- Un bouton **« Ne plus proposer »** pour masquer définitivement cette référence
+Each alert offers:
+- **"Prepare cart"** button that pre-fills the cart with the usual median quantity
+- **"Not now"** button to temporarily hide the alert
+- **"Don't suggest again"** button to permanently hide this product
 
-Le cloisonnement par entreprise est strict : un acheteur ne voit que les alertes de son entreprise.
+Company isolation is strict: a buyer only sees alerts from their own company.
 
-### Calcul d'une prédiction
+### Calculate a prediction
 
 ```php
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface;
@@ -65,42 +69,45 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculat
 $prediction = $calculator->calculate($variant, $company);
 
 if ($prediction->isPredicted()) {
-    echo $prediction->explanation; // "commandée 5 fois, tous les 28 jours en médiane"
-    echo $prediction->expectedReorderDate->format('Y-m-d'); // Date attendue du prochain réassort
+    echo $prediction->explanation; // "ordered 5 times, every 28 days on median"
+    echo $prediction->expectedReorderDate->format('Y-m-d'); // Expected next reorder date
 } else {
-    echo $prediction->explanation; // "historique insuffisant : commandée 1 fois, 3 commandes nécessaires"
+    echo $prediction->explanation; // "insufficient history: ordered 1 time, 3 orders needed"
 }
 ```
 
-### Recalcul planifié
+### Scheduled recalculation
 
-Le plugin inclut une commande pour recalculer toutes les prédictions :
+The plugin includes a command to recalculate all predictions:
 
 ```bash
 php bin/console tmonier:predictive:recalculate
 ```
 
-Cette commande peut être planifiée quotidiennement via cron :
+This command can be scheduled daily via cron:
 
 ```cron
 0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
 ```
 
-## Règles de calcul
+## Calculation rules
 
-- **Minimum 3 commandes** : une prédiction nécessite au moins 3 commandes complétées
-- **Commandes comptées** : seules les commandes complétées et non annulées sont prises en compte
-- **Médiane robuste** : la médiane n'est pas faussée par les valeurs extrêmes, contrairement à la moyenne
-- **Cloisonnement** : chaque entreprise a ses propres prédictions, sans mélange
+- **Minimum 3 orders**: a prediction requires at least 3 completed orders
+- **Counted orders**: only completed and non-cancelled orders are taken into account
+- **Robust median**: the median is not skewed by extreme values, unlike the average
+- **Company isolation**: each company has its own predictions, with no mixing
 
-## Démo
+<!-- vitrine:demo-b2b:start -->
+## B2B demo
 
-Une instance de démonstration est disponible sur [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr).
+This plugin is used in the [Sylius B2B demo](https://github.com/thibmonier/sylius-b2b-demo): a Sylius 2.3 shop with fictitious sample data where the B2B plugins work together. The source code, setup and fixtures of the demo are in that repository.
 
-## Auteur
+- Online demo: [sylius-b2b.thibaut-monier.fr](https://sylius-b2b.thibaut-monier.fr)
+- Author: [Thibaut Monier](https://www.linkedin.com/in/thibautmonier/)
 
-[Thibaut Monier](https://www.linkedin.com/in/thibautmonier/) – Développement et maintenance
+The demo is an example, not a production setup.
+<!-- vitrine:demo-b2b:end -->
 
-## Licence
+## License
 
-MIT. Voir le fichier [LICENSE](LICENSE) pour plus de détails.
+MIT
