@@ -1,3 +1,4 @@
 imports:
     - { resource: "services.yaml" }
     - { resource: "twig_hooks/**/*.yaml" }
+    - { resource: "routes/**/*.yaml" }

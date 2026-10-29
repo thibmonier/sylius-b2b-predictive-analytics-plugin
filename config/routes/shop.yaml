@@ -1,0 +1,7 @@
+tmonier_predictive_shop_prepare_cart:
+    path: /predictive/prepare-cart/{variantId}
+    methods: [POST]
+    defaults:
+        _controller: Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\PrepareCartController
+    requirements:
+        variantId: \d+

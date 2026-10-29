@@ -22,3 +22,12 @@ services:
     Tmonier\SyliusPredictiveAnalyticsPlugin\Command\RecalculatePredictionsCommand:
         arguments:
             $companyRepository: '@tmonier_company_accounts.repository.company'
+
+    # Contrôleur PrepareCart : injection des services Sylius par leurs IDs
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop\PrepareCartController:
+        arguments:
+            $orderRepository: '@sylius.repository.order'
+            $orderItemFactory: '@sylius.factory.order_item'
+            $orderItemQuantityModifier: '@sylius.modifier.order_item_quantity'
+            $orderModifier: '@sylius.modifier.order'
+            $entityManager: '@sylius.manager.order'
