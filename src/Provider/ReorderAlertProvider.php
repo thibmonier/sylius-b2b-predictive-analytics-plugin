@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Provider;
 
 use Doctrine\ORM\EntityManagerInterface;
+use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
@@ -19,6 +20,7 @@ final readonly class ReorderAlertProvider
     public function __construct(
         private Security $security,
         private EntityManagerInterface $entityManager,
+        private ClockInterface $clock,
     ) {
     }
 
@@ -48,7 +50,7 @@ final readonly class ReorderAlertProvider
         $company = $member->getCompany();
 
         // Date limite : dans 7 jours
-        $now = new \DateTimeImmutable();
+        $now = $this->clock->now();
         $sevenDaysFromNow = $now->modify('+7 days');
 
         // Requête DQL pour récupérer les prédictions avec échéance ≤ 7 jours
@@ -67,12 +69,18 @@ final readonly class ReorderAlertProvider
         /** @var list<StoredPrediction> $predictions */
         $predictions = $qb->getQuery()->getResult();
 
-        // Filtrer par date attendue dans les 7 jours
+        // Filtrer par date attendue dans les 7 jours, y compris retards jusqu'à un intervalle médian
         $alerts = [];
         foreach ($predictions as $prediction) {
             $expectedDate = $this->calculateExpectedDate($prediction);
-            if (null !== $expectedDate && $expectedDate <= $sevenDaysFromNow && $expectedDate >= $now) {
-                $alerts[] = $prediction;
+            if (null !== $expectedDate && $expectedDate <= $sevenDaysFromNow) {
+                // Retard maximum accepté : un intervalle médian
+                $medianDays = (int) $prediction->getMedianIntervalDays();
+                $earliestDate = $now->modify(sprintf('-%d days', $medianDays));
+
+                if ($expectedDate >= $earliestDate) {
+                    $alerts[] = $prediction;
+                }
             }
         }
 

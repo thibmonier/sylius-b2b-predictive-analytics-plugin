@@ -16,12 +16,7 @@
                         </strong>
                         <p class="reorder-alert__explanation">{{ alert.explanation }}</p>
                     </div>
-                    <form method="post" action="{{ path('tmonier_predictive_shop_prepare_cart', {'variantId': alert.variant.id}) }}">
-                        <input type="hidden" name="_csrf_token" value="{{ csrf_token('tmonier_predictive_prepare_cart') }}">
-                        <button type="submit" class="button" data-test="prepare-cart-button">
-                            Préparer le panier
-                        </button>
-                    </form>
+                    {# TODO T-218-04 : bouton "Préparer le panier" #}
                 </div>
             {% endfor %}
         </div>
