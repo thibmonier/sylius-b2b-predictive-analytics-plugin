@@ -21,6 +21,9 @@ final readonly class MedianQuantityCalculator
     public function calculate(CompanyInterface $company, ProductVariantInterface $variant): int
     {
         // Récupération des quantités commandées (triées par ordre croissant)
+        // Règles (comme company-insights CountedOrderSql::counted()) :
+        // - checkout_state = 'completed' (commande passée)
+        // - state <> 'cancelled' (non annulée)
         $dql = <<<'DQL'
             SELECT oi.quantity
             FROM Sylius\Component\Core\Model\OrderItem oi
@@ -29,14 +32,14 @@ final readonly class MedianQuantityCalculator
             JOIN Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMember m WITH m.customer = c
             WHERE m.company = :company
             AND oi.variant = :variant
-            AND o.state = :state
+            AND o.checkoutState = 'completed'
+            AND o.state != 'cancelled'
             ORDER BY oi.quantity ASC
             DQL;
 
         $query = $this->entityManager->createQuery($dql);
         $query->setParameter('company', $company);
         $query->setParameter('variant', $variant);
-        $query->setParameter('state', 'fulfilled');
 
         /** @var list<array{quantity: int}> $results */
         $results = $query->getResult();
