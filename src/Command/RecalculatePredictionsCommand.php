@@ -37,16 +37,14 @@ final class RecalculatePredictionsCommand extends Command
 
         $io->info('Début du recalcul des prédictions...');
 
-        // Preuve rouge : tableau vide au lieu de findAll()
-        /** @var array<CompanyInterface> $companies */
-        $companies = $this->companyRepository->findBy(['id' => -1]);  // Aucune entreprise avec ID -1
-        $totalCompanies = 0;
+        $companies = $this->companyRepository->findAll();
+        $totalCompanies = \count($companies);
         $totalPredictions = 0;
 
         foreach ($companies as $company) {
+            \assert($company instanceof CompanyInterface);
             $count = $this->calculator->recalculateForCompany($company);
             $totalPredictions += $count;
-            ++$totalCompanies;
 
             $io->writeln(sprintf(
                 '  - %s : %d prédiction%s recalculée%s',
