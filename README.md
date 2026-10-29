@@ -7,13 +7,14 @@ Plugin Sylius 2 qui calcule automatiquement les rythmes de réassort par entrepr
 - **Calcul d'intervalle médian** : analyse l'historique de commandes pour déterminer le rythme d'achat typique de chaque référence par entreprise
 - **Prédiction explicable** : conserve l'explication du calcul (« commandée 5 fois, tous les 28 jours en médiane »)
 - **Date de réassort attendue** : estime la prochaine date de commande selon le rythme habituel
-- **Recalcul planifié** : mise à jour automatique quotidienne des prédictions
+- **Commande de recalcul** : mise à jour de toutes les prédictions en une commande planifiable
 
 ## Prérequis
 
 - PHP 8.2 ou supérieur
 - Sylius 2.2.9 ou 2.3+
-- Plugin [company-accounts](https://github.com/thibmonier/sylius-company-accounts-plugin) installé
+- Plugin [company-accounts](https://github.com/thibmonier/sylius-company-accounts-plugin) (^0.1) installé
+- Plugin [company-insights](https://github.com/thibmonier/sylius-company-insights-plugin) (^0.2) installé
 
 ## Installation
 
@@ -30,6 +31,12 @@ return [
 ];
 ```
 
+Exécutez les migrations pour créer la table des prédictions :
+
+```bash
+php bin/console doctrine:migrations:migrate
+```
+
 ## Usage
 
 ### Calcul d'une prédiction
@@ -39,9 +46,11 @@ use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculat
 
 $prediction = $calculator->calculate($variant, $company);
 
-if (null !== $prediction) {
+if ($prediction->isPredicted()) {
     echo $prediction->explanation; // "commandée 5 fois, tous les 28 jours en médiane"
     echo $prediction->expectedReorderDate->format('Y-m-d'); // Date attendue du prochain réassort
+} else {
+    echo $prediction->explanation; // "historique insuffisant (1 commande, minimum 3 requises)"
 }
 ```
 
