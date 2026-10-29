@@ -208,7 +208,7 @@ final class ReorderAlertBlockTest extends WebTestCase
         // Vérifier le résultat MÉTIER en base : le panier du client contient la variante avec la quantité médiane
         $orderRepository = self::getContainer()->get('sylius.repository.order');
         assert($orderRepository instanceof OrderRepositoryInterface);
-        $cart = $orderRepository->findCartByChannel($customer, $catalog->channel());
+        $cart = $orderRepository->findLatestNotEmptyCartByChannelAndCustomer($catalog->channel(), $customer);
         self::assertNotNull($cart, 'Le panier doit exister');
 
         $items = $cart->getItems();
@@ -216,7 +216,7 @@ final class ReorderAlertBlockTest extends WebTestCase
 
         $item = $items->first();
         self::assertNotFalse($item, 'La collection doit contenir au moins un élément');
-        self::assertSame($variant, $item->getVariant(), 'La variante doit être Widget');
+        self::assertSame($variant->getId(), $item->getVariant()?->getId(), 'La variante doit être Widget');
         self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)');
     }
 
