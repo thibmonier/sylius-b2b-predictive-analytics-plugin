@@ -13,7 +13,7 @@ Plugin Sylius 2 qui calcule automatiquement les rythmes de réassort par entrepr
 
 - PHP 8.2 ou supérieur
 - Sylius 2.2.9 ou 2.3+
-- Plugin [company-accounts](https://github.com/thibmonier/sylius-company-accounts-plugin) (^0.1) installé
+- Plugin [company-accounts](https://github.com/thibmonier/sylius-company-accounts-plugin) (^1.1) installé
 - Plugin [company-insights](https://github.com/thibmonier/sylius-company-insights-plugin) (^0.2) installé
 
 ## Installation
@@ -50,7 +50,7 @@ if ($prediction->isPredicted()) {
     echo $prediction->explanation; // "commandée 5 fois, tous les 28 jours en médiane"
     echo $prediction->expectedReorderDate->format('Y-m-d'); // Date attendue du prochain réassort
 } else {
-    echo $prediction->explanation; // "historique insuffisant (1 commande, minimum 3 requises)"
+    echo $prediction->explanation; // "historique insuffisant : commandée 1 fois, 3 commandes nécessaires"
 }
 ```
 
