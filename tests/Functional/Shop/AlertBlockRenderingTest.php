@@ -66,7 +66,7 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         // Product name should appear only once (not "Safety Vest - Safety Vest")
         $content = $this->client->getResponse()->getContent();
-        self::assertIsString($content);
+        self::assertNotFalse($content);
         $matches = \substr_count($content, 'Safety Vest');
         self::assertSame(1, $matches, 'Product name should appear only once when variant name matches');
     }
@@ -101,7 +101,7 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         // And they should be separated by " — " (em dash with spaces)
         $content = $this->client->getResponse()->getContent();
-        self::assertIsString($content);
+        self::assertNotFalse($content);
         self::assertStringContainsString('Safety Vest — Yellow Class 2', $content);
     }
 
@@ -130,7 +130,7 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         // Should NOT contain dot as separator
         $content = $this->client->getResponse()->getContent();
-        self::assertIsString($content);
+        self::assertNotFalse($content);
         self::assertStringNotContainsString('56.5', $content);
     }
 
@@ -181,18 +181,19 @@ final class AlertBlockRenderingTest extends WebTestCase
         self::assertCount(1, $prepareButton);
         self::assertTrue(
             $prepareButton->first()->attr('class') === 'b2b-account__action b2b-account__action--solid',
-            'Prepare cart button should use b2b-account__action b2b-account__action--solid classes'
+            'Prepare cart button should use b2b-account__action b2b-account__action--solid classes',
         );
 
         // "Not now" and "Don't suggest again" buttons should have b2b-account__action with --outline modifier
         $dismissButtons = $crawler->filter('[data-test^="dismiss-form"] button');
         self::assertGreaterThanOrEqual(2, \count($dismissButtons));
 
-        foreach ($dismissButtons as $button) {
-            $class = $button->getAttribute('class');
-            self::assertStringContainsString('b2b-account__action', $class ?? '');
-            self::assertStringContainsString('b2b-account__action--outline', $class ?? '');
-        }
+        $dismissButtons->each(function ($button) {
+            $class = $button->attr('class');
+            self::assertNotNull($class, 'Button must have a class attribute');
+            self::assertStringContainsString('b2b-account__action', $class);
+            self::assertStringContainsString('b2b-account__action--outline', $class);
+        });
     }
 
     private function createAlertWithMedian(CustomerInterface $customer, ProductVariantInterface $variant, float $medianDays, CompanyInterface $company): void
@@ -209,8 +210,7 @@ final class AlertBlockRenderingTest extends WebTestCase
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
         $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
-        
-        
+
         $calculator->recalculateForCompany($company);
     }
 
