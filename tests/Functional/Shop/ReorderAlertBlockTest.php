@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Shop;
 
 use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Repository\OrderRepositoryInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -204,13 +205,17 @@ final class ReorderAlertBlockTest extends WebTestCase
         $cartUrl = $router->generate('sylius_shop_cart_summary', ['_locale' => $catalog->localeCode()]);
         self::assertResponseRedirects($cartUrl);
 
-        // Suivre la redirection et vérifier le contenu du panier
-        $this->client->followRedirect();
-        self::assertResponseIsSuccessful();
+        // Vérifier le résultat MÉTIER en base : le panier du client contient la variante avec la quantité médiane
+        $orderRepository = self::getContainer()->get('sylius.repository.order');
+        $cart = $orderRepository->findCartByChannel($customer, $channel);
+        self::assertNotNull($cart, 'Le panier doit exister');
 
-        // Le panier doit contenir la référence avec la quantité médiane (3)
-        self::assertSelectorTextContains('.sylius-cart-items', 'Widget');
-        self::assertSelectorTextContains('.sylius-cart-items', '3'); // Quantité médiane
+        $items = $cart->getItems();
+        self::assertCount(1, $items, 'Le panier doit contenir exactement 1 ligne');
+
+        $item = $items->first();
+        self::assertSame($variant, $item->getVariant(), 'La variante doit être Widget');
+        self::assertSame(3, $item->getQuantity(), 'La quantité doit être la médiane (3)')
     }
 
     private function loginShopUser(CustomerInterface $customer): void
