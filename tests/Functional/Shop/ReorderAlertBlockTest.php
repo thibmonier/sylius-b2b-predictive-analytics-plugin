@@ -197,8 +197,9 @@ final class ReorderAlertBlockTest extends WebTestCase
         $form = $crawler->filter('[data-test="prepare-cart-form"]')->form();
         $this->client->submit($form);
 
-        // La réponse doit être une redirection vers le panier
-        self::assertResponseRedirects($this->shopUrl('/cart'));
+        // La réponse doit être une redirection vers le panier (URL générée de sylius_shop_cart_summary)
+        $cartUrl = $this->client->getContainer()->get('router')->generate('sylius_shop_cart_summary', ['_locale' => $catalog->localeCode()]);
+        self::assertResponseRedirects($cartUrl);
 
         // Suivre la redirection et vérifier le contenu du panier
         $this->client->followRedirect();
