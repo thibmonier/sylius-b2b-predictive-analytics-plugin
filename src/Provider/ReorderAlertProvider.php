@@ -9,6 +9,7 @@ use Psr\Clock\ClockInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Tmonier\SyliusCompanyAccountsPlugin\Entity\CompanyMemberInterface;
+use Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\AlertCalculator;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\DismissedPrediction;
 use Tmonier\SyliusPredictiveAnalyticsPlugin\Entity\StoredPrediction;
 
@@ -50,11 +51,9 @@ final readonly class ReorderAlertProvider
 
         $company = $member->getCompany();
 
-        // Date limite : dans 7 jours
         $now = $this->clock->now();
-        $sevenDaysFromNow = $now->modify('+7 days');
 
-        // Requête DQL pour récupérer les prédictions avec échéance ≤ 7 jours
+        // Requête DQL pour récupérer les prédictions avec médiane et dernière commande
         // Exclure les alertes masquées par le client courant
         $qb = $this->entityManager->createQueryBuilder();
         $qb->select('p')
@@ -79,37 +78,21 @@ final readonly class ReorderAlertProvider
         /** @var list<StoredPrediction> $predictions */
         $predictions = $qb->getQuery()->getResult();
 
-        // Filtrer par date attendue dans les 7 jours, y compris retards jusqu'à un intervalle médian
+        // Filtrer par la règle d'alerte (délégation à AlertCalculator)
         $alerts = [];
         foreach ($predictions as $prediction) {
-            $expectedDate = $this->calculateExpectedDate($prediction);
-            if ($expectedDate instanceof \DateTimeImmutable && $expectedDate <= $sevenDaysFromNow) {
-                // Retard maximum accepté : un intervalle médian
-                $medianDays = (int) $prediction->getMedianIntervalDays();
-                $earliestDate = $now->modify(sprintf('-%d days', $medianDays));
+            $medianIntervalDays = $prediction->getMedianIntervalDays();
+            $lastOrderDate = $prediction->getLastOrderDate();
 
-                if ($expectedDate >= $earliestDate) {
-                    $alerts[] = $prediction;
-                }
+            if (null === $medianIntervalDays || !$lastOrderDate instanceof \DateTimeImmutable) {
+                continue;
+            }
+
+            if (AlertCalculator::shouldAlert($now, $lastOrderDate, $medianIntervalDays)) {
+                $alerts[] = $prediction;
             }
         }
 
         return $alerts;
-    }
-
-    private function calculateExpectedDate(StoredPrediction $prediction): ?\DateTimeImmutable
-    {
-        $medianDays = $prediction->getMedianIntervalDays();
-        $lastOrderDate = $prediction->getLastOrderDate();
-
-        if (null === $medianDays || !$lastOrderDate instanceof \DateTimeImmutable) {
-            return null;
-        }
-
-        $intervalDays = (int) $medianDays;
-        $intervalHours = (int) (($medianDays - $intervalDays) * 24);
-        $intervalSpec = sprintf('P%dDT%dH', $intervalDays, $intervalHours);
-
-        return $lastOrderDate->add(new \DateInterval($intervalSpec));
     }
 }
