@@ -17,7 +17,7 @@ final class ReorderAlertExtension extends AbstractExtension
     public function getFunctions(): array
     {
         return [
-            new TwigFunction('tmonier_predictive_reorder_alerts', [$this->provider, 'getAlerts']),
+            new TwigFunction('tmonier_predictive_reorder_alerts', $this->provider->getAlerts(...)),
         ];
     }
 }

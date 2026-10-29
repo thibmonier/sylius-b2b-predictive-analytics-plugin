@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Tmonier\SyliusPredictiveAnalyticsPlugin\Controller\Shop;
 
 use Doctrine\ORM\EntityManagerInterface;
-use Sylius\Component\Core\Model\OrderInterface;
 use Sylius\Component\Core\Model\OrderItemInterface;
 use Sylius\Component\Core\Model\ShopUserInterface;
 use Sylius\Component\Order\Context\CartContextInterface;
@@ -15,7 +14,6 @@ use Sylius\Component\Resource\Factory\FactoryInterface;
 use Symfony\Bundle\SecurityBundle\Security;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
@@ -43,7 +41,7 @@ final readonly class PrepareCartController
     ) {
     }
 
-    public function __invoke(Request $request, int $variantId): Response
+    public function __invoke(Request $request, int $variantId): \Symfony\Component\HttpFoundation\RedirectResponse
     {
         // Vérification du jeton CSRF
         $csrfToken = $request->request->getString('_csrf_token');
@@ -58,7 +56,7 @@ final readonly class PrepareCartController
         }
 
         $customer = $user->getCustomer();
-        if (null === $customer) {
+        if (!$customer instanceof \Sylius\Component\Customer\Model\CustomerInterface) {
             throw new AccessDeniedHttpException('Customer not found.');
         }
 

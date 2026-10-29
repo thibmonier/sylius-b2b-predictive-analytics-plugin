@@ -35,7 +35,7 @@ final readonly class ReorderAlertProvider
         }
 
         $customer = $user->getCustomer();
-        if (null === $customer) {
+        if (!$customer instanceof \Sylius\Component\Customer\Model\CustomerInterface) {
             return [];
         }
 
@@ -73,7 +73,7 @@ final readonly class ReorderAlertProvider
         $alerts = [];
         foreach ($predictions as $prediction) {
             $expectedDate = $this->calculateExpectedDate($prediction);
-            if (null !== $expectedDate && $expectedDate <= $sevenDaysFromNow) {
+            if ($expectedDate instanceof \DateTimeImmutable && $expectedDate <= $sevenDaysFromNow) {
                 // Retard maximum accepté : un intervalle médian
                 $medianDays = (int) $prediction->getMedianIntervalDays();
                 $earliestDate = $now->modify(sprintf('-%d days', $medianDays));
@@ -92,7 +92,7 @@ final readonly class ReorderAlertProvider
         $medianDays = $prediction->getMedianIntervalDays();
         $lastOrderDate = $prediction->getLastOrderDate();
 
-        if (null === $medianDays || null === $lastOrderDate) {
+        if (null === $medianDays || !$lastOrderDate instanceof \DateTimeImmutable) {
             return null;
         }
 

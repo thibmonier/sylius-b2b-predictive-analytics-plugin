@@ -52,7 +52,7 @@ final class ReorderAlertBlockTest extends WebTestCase
 
         // Recalcul de la prédiction
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
-        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
         $calculator->recalculateForCompany($company);
 
         // Connexion en tant que membre
@@ -96,7 +96,7 @@ final class ReorderAlertBlockTest extends WebTestCase
         $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-2 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
-        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
         $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
@@ -128,7 +128,7 @@ final class ReorderAlertBlockTest extends WebTestCase
         $catalog->orderOfLines($customer, [[$variant, 1, 11000]], $now->modify('-30 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
-        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
         $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
@@ -181,7 +181,7 @@ final class ReorderAlertBlockTest extends WebTestCase
         $catalog->orderOfLines($customer, [[$variant, 3, 11000]], $now->modify('-24 days')->format('Y-m-d H:i:s'));
 
         /** @var \Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface $calculator */
-        $calculator = self::getContainer()->get('Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface');
+        $calculator = self::getContainer()->get(\Tmonier\SyliusPredictiveAnalyticsPlugin\Calculator\PredictiveReorderCalculatorInterface::class);
         $calculator->recalculateForCompany($company);
 
         $this->loginShopUser($customer);
