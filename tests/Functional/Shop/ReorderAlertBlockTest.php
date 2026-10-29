@@ -7,6 +7,7 @@ namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Shop;
 use Sylius\Component\Core\Model\CustomerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
 
 /**
@@ -198,7 +199,9 @@ final class ReorderAlertBlockTest extends WebTestCase
         $this->client->submit($form);
 
         // La réponse doit être une redirection vers le panier (URL générée de sylius_shop_cart_summary)
-        $cartUrl = $this->client->getContainer()->get('router')->generate('sylius_shop_cart_summary', ['_locale' => $catalog->localeCode()]);
+        $router = self::getContainer()->get('router');
+        assert($router instanceof UrlGeneratorInterface);
+        $cartUrl = $router->generate('sylius_shop_cart_summary', ['_locale' => $catalog->localeCode()]);
         self::assertResponseRedirects($cartUrl);
 
         // Suivre la redirection et vérifier le contenu du panier
