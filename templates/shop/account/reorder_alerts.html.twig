@@ -9,10 +9,8 @@
                 <div class="reorder-alert" data-test="reorder-alert-item">
                     <div class="reorder-alert__content">
                         <strong class="reorder-alert__product">
-                            {{ alert.variant.product.name }}
-                            {% if alert.variant.name and alert.variant.name != alert.variant.product.name %}
-                                — {{ alert.variant.name }}
-                            {% endif %}
+                            {{- alert.variant.product.name -}}
+                            {%- if alert.variant.name and alert.variant.name != alert.variant.product.name %} — {{ alert.variant.name }}{% endif -%}
                         </strong>
                         <p class="reorder-alert__explanation">
                             {{ 'tmonier_predictive.shop.reorder_alerts.explanation'|trans({
