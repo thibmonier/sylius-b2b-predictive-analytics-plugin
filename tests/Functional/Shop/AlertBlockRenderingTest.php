@@ -263,6 +263,14 @@ final class AlertBlockRenderingTest extends WebTestCase
             self::assertStringContainsString('btn', $class);
             self::assertStringContainsString('btn-outline-gray', $class);
         });
+
+        // The plugin ships no CSS: the layout comes from Bootstrap utilities of the shop theme. Without them the three
+        // forms stack with no gap and an alert touches the next one.
+        $actionsClass = (string) $crawler->filter('[data-test="reorder-alert-item"] .reorder-alert__actions')->first()->attr('class');
+        foreach (['d-flex', 'flex-wrap', 'gap-2'] as $utility) {
+            self::assertStringContainsString($utility, $actionsClass, 'The actions must sit on one row with a gap');
+        }
+        self::assertStringContainsString('mb-4', (string) $crawler->filter('[data-test="reorder-alert-item"]')->first()->attr('class'), 'Alerts must be spaced');
     }
 
     private function loginShopUser(CustomerInterface $customer): void
