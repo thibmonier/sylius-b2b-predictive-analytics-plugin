@@ -90,6 +90,12 @@ This command can be scheduled daily via cron:
 0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
 ```
 
+## Screenshots
+
+The "Reorder soon" block of the customer account, in the [Sylius B2B demo](https://sylius-b2b.thibaut-monier.fr/en_US/plugins):
+
+![Reorder soon block in the customer account](docs/reorder-alerts-en.png)
+
 ## Calculation rules
 
 - **Minimum 3 orders**: a prediction requires at least 3 completed orders

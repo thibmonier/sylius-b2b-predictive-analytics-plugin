@@ -90,6 +90,12 @@ Cette commande peut être planifiée quotidiennement via cron :
 0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
 ```
 
+## Captures d'écran
+
+Le bloc « À réassortir bientôt » du compte client, dans la [démo Sylius B2B](https://sylius-b2b.thibaut-monier.fr/fr_FR/plugins) :
+
+![Bloc « À réassortir bientôt » du compte client](docs/reorder-alerts-fr.png)
+
 ## Règles de calcul
 
 - **Minimum 3 commandes** : une prédiction nécessite au moins 3 commandes complétées
