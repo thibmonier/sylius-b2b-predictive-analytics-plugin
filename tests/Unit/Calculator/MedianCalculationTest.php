@@ -44,4 +44,12 @@ final class MedianCalculationTest extends TestCase
 
         $this->assertSame(20.0, $median);
     }
+
+    public function testCalculateMedianRejectsEmptyIntervals(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Cannot calculate median of empty array');
+
+        IntervalCalculator::calculateMedian([]);
+    }
 }
