@@ -15,6 +15,7 @@ Built on [`tmonier/sylius-company-accounts-plugin`](https://github.com/thibmonie
 - **Pre-fill cart**: "Prepare cart" button adds the typical median quantity to cart
 - **Dismiss alerts**: "Not now" (temporary) or "Don't suggest again" (permanent) buttons
 - **Recalculation command**: updates all predictions with a schedulable command
+- **Explainable attrition score in the admin**: shows on the company page which companies are slowing down, with the reason in plain words, and a filter in the company list
 
 ## Prerequisites
 
@@ -46,6 +47,13 @@ composer require tmonier/sylius-b2b-predictive-analytics-plugin
     ```yaml
     tmonier_predictive:
         resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml'
+    ```
+
+4. Import the plugin configuration (services, Twig hooks, company grid filter), for example in `config/packages/tmonier_predictive.yaml`:
+
+    ```yaml
+    imports:
+        - { resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/config.yaml' }
     ```
 
 ## Usage
@@ -89,6 +97,24 @@ This command can be scheduled daily via cron:
 ```cron
 0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
 ```
+
+### Attrition score in the admin
+
+The company page of the admin shows an **"Ordering rhythm"** block, and the company list gets an **"Ordering rhythm"** filter (active, at risk, critical). The block gives the status, the reason in plain words and an "indicative" mention. Example: *"orders every 21 days, nothing for 47 days"*.
+
+The score is computed from the orders already in the shop: no additional personal data is collected, and the figure is an estimate to confirm with the customer, not a decision.
+
+**Rule** (same orders as the purchasing dashboard: completed, not cancelled, not waiting for approval):
+
+| Situation | Status |
+|-----------|--------|
+| Fewer than 4 orders over the last 12 months | Insufficient history, no score |
+| First order less than 6 months ago (new or seasonal company) | No alert status shown |
+| Time since the last order is at most 2 times the median interval between orders | Active |
+| Time since the last order is more than 2 times the median interval | At risk |
+| Time since the last order is more than 3 times the median interval | Critical |
+
+**Permission.** Sylius core has no per-resource permission of its own: its `permission: true` admin routes ask the service set in `sylius_resource.authorization_checker`, which allows everything by default. The attrition block and the filter ask this same service for the permission `tmonier_company_accounts.company.show`. A project that plugs its own authorization checker there decides who sees the score; without one, every administrator who can open the company page sees it.
 
 ## Screenshots
 

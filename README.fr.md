@@ -15,6 +15,7 @@ Construit sur [`tmonier/sylius-company-accounts-plugin`](https://github.com/thib
 - **Pré-remplissage du panier** : bouton « Préparer le panier » qui ajoute la quantité médiane habituelle au panier
 - **Masquer les alertes** : boutons « Pas maintenant » (temporaire) ou « Ne plus proposer » (définitif)
 - **Commande de recalcul** : mise à jour de toutes les prédictions avec une commande planifiable
+- **Score d'attrition explicable dans l'admin** : indique sur la fiche entreprise lesquelles ralentissent leurs commandes, avec la raison en clair, et un filtre dans la liste des entreprises
 
 ## Prérequis
 
@@ -46,6 +47,13 @@ composer require tmonier/sylius-b2b-predictive-analytics-plugin
     ```yaml
     tmonier_predictive:
         resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/routes.yaml'
+    ```
+
+4. Importer la configuration du plugin (services, hooks Twig, filtre de la grille des entreprises), par exemple dans `config/packages/tmonier_predictive.yaml` :
+
+    ```yaml
+    imports:
+        - { resource: '@TmonierSyliusPredictiveAnalyticsPlugin/config/config.yaml' }
     ```
 
 ## Usage
@@ -89,6 +97,24 @@ Cette commande peut être planifiée quotidiennement via cron :
 ```cron
 0 2 * * * cd /path/to/project && php bin/console tmonier:predictive:recalculate
 ```
+
+### Score d'attrition dans l'admin
+
+La fiche entreprise de l'admin affiche un bloc **« Rythme de commande »**, et la liste des entreprises reçoit un filtre **« Rythme de commande »** (actif, à risque, critique). Le bloc donne le statut, la raison en clair et la mention « indicatif ». Exemple : *« commande tous les 21 jours, rien depuis 47 jours »*.
+
+Le score est calculé à partir des commandes déjà présentes dans la boutique : aucune donnée personnelle supplémentaire n'est collectée, et le chiffre est une estimation à confirmer avec le client, pas une décision.
+
+**Règle** (mêmes commandes que le tableau de bord d'achats : terminées, non annulées, non en attente d'approbation) :
+
+| Situation | Statut |
+|-----------|--------|
+| Moins de 4 commandes sur les 12 derniers mois | Historique insuffisant, sans score |
+| Première commande il y a moins de 6 mois (entreprise nouvelle ou saisonnière) | Aucun statut d'alerte affiché |
+| Délai depuis la dernière commande d'au plus 2 fois l'intervalle médian entre commandes | Actif |
+| Délai depuis la dernière commande de plus de 2 fois l'intervalle médian | À risque |
+| Délai depuis la dernière commande de plus de 3 fois l'intervalle médian | Critique |
+
+**Permission.** Le cœur de Sylius n'a pas de permission par ressource : ses routes d'admin `permission: true` interrogent le service défini dans `sylius_resource.authorization_checker`, qui autorise tout par défaut. Le bloc d'attrition et le filtre interrogent ce même service avec la permission `tmonier_company_accounts.company.show`. Un projet qui y branche son propre contrôle d'autorisation décide qui voit le score ; sans cela, tout administrateur qui peut ouvrir la fiche entreprise le voit.
 
 ## Captures d'écran
 
