@@ -3,3 +3,7 @@ imports:
     - { resource: "@TmonierSyliusCompanyInsightsPlugin/config/config.yaml" }
     - { resource: "@TmonierSyliusPredictiveAnalyticsPlugin/config/config.yaml" }
     - { resource: "services.php" }
+
+# Le contrôle d'autorisation qu'un projet hôte brancherait pour les permissions par ressource.
+sylius_resource:
+    authorization_checker: Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\DenyCompanyReadChecker
