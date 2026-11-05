@@ -1,0 +1,4 @@
+tmonier_predictive.admin.attrition.reason.late: >-
+    commande {days, plural, one {tous les jours} other {tous les # jours}}, rien depuis {since, plural, one {# jour} other {# jours}}
+tmonier_predictive.admin.attrition.reason.active: >-
+    commande {days, plural, one {tous les jours} other {tous les # jours}}, dernière commande {since, plural, =0 {aujourd'hui} one {il y a # jour} other {il y a # jours}}

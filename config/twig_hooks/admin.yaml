@@ -1,0 +1,7 @@
+sylius_twig_hooks:
+    hooks:
+        # Fiche entreprise (page d'édition de company-accounts) : bloc d'attrition entre l'en-tête et le formulaire.
+        'tmonier_company_accounts_admin.company.update.content':
+            tmonier_predictive_attrition:
+                template: '@TmonierSyliusPredictiveAnalyticsPlugin/admin/company/attrition.html.twig'
+                priority: 150

@@ -6,3 +6,13 @@ tmonier_predictive:
             dismiss_later: 'Pas maintenant'
             dismiss_never: 'Ne plus proposer'
             explanation: 'commandée %count% fois, tous les %days% jours en médiane'
+    admin:
+        attrition:
+            title: 'Rythme de commande'
+            filter: 'Rythme de commande'
+            indicative: "Indicatif : estimation fondée sur l'historique des commandes des 12 derniers mois, à confirmer avec le client."
+            status:
+                active: 'Actif'
+                at_risk: 'À risque'
+                critical: 'Critique'
+                insufficient_history: 'Historique insuffisant'

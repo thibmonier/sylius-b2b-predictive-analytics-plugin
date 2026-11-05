@@ -6,3 +6,13 @@ tmonier_predictive:
             dismiss_later: 'Not now'
             dismiss_never: 'Never show again'
             explanation: 'ordered %count% times, every %days% days median'
+    admin:
+        attrition:
+            title: 'Ordering rhythm'
+            filter: 'Ordering rhythm'
+            indicative: 'Indicative: an estimate based on the order history of the last 12 months, to be confirmed with the customer.'
+            status:
+                active: 'Active'
+                at_risk: 'At risk'
+                critical: 'Critical'
+                insufficient_history: 'Insufficient history'

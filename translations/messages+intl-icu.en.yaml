@@ -1,0 +1,4 @@
+tmonier_predictive.admin.attrition.reason.late: >-
+    orders every {days, plural, one {day} other {# days}}, nothing for {since, plural, one {# day} other {# days}}
+tmonier_predictive.admin.attrition.reason.active: >-
+    orders every {days, plural, one {day} other {# days}}, last order {since, plural, =0 {today} one {# day ago} other {# days ago}}

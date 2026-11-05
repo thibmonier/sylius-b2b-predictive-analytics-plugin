@@ -1,0 +1,16 @@
+sylius_grid:
+    templates:
+        filter:
+            tmonier_predictive_attrition: '@SyliusAdmin/shared/grid/filter/select.html.twig'
+    grids:
+        # Filtre d'attrition ajouté à la liste des entreprises de company-accounts.
+        tmonier_company_accounts_admin_company:
+            filters:
+                attrition:
+                    type: tmonier_predictive_attrition
+                    label: tmonier_predictive.admin.attrition.filter
+                    form_options:
+                        choices:
+                            tmonier_predictive.admin.attrition.status.at_risk: at_risk
+                            tmonier_predictive.admin.attrition.status.critical: critical
+                            tmonier_predictive.admin.attrition.status.active: active
