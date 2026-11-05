@@ -47,3 +47,22 @@ services:
         arguments:
             $variantRepository: '@sylius.repository.product_variant'
             $clock: '@clock'
+
+    # Attrition : historique des commandes et horloge
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Attrition\CompanyOrderHistoryInterface:
+        alias: Tmonier\SyliusPredictiveAnalyticsPlugin\Attrition\Dbal\DbalCompanyOrderHistory
+
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Attrition\Dbal\DbalCompanyOrderHistory:
+        arguments:
+            $countedOrderSql: '@tmonier_company_insights.sql.counted_order'
+
+    # Permission de lecture des entreprises : contrôle d'autorisation des ressources Sylius
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Security\CompanyReadPermission:
+        arguments:
+            $authorizationChecker: '@sylius.resource_controller.authorization_checker'
+            $registry: '@sylius.resource_registry'
+
+    # Filtre « rythme de commande » de la liste des entreprises
+    Tmonier\SyliusPredictiveAnalyticsPlugin\Grid\AttritionFilter:
+        tags:
+            - { name: sylius.grid_filter, type: tmonier_predictive_attrition, form_type: Sylius\Bundle\GridBundle\Form\Type\Filter\SelectFilterType }

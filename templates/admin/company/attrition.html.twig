@@ -1,0 +1,20 @@
+{% set score = tmonier_predictive_company_attrition(hookable_metadata.context.resource) %}
+
+{% if score is not null and score.status.value != 'too_recent' %}
+    {% set badge = {'active': 'bg-green-lt', 'at_risk': 'bg-orange-lt', 'critical': 'bg-red-lt', 'insufficient_history': 'bg-secondary-lt'}[score.status.value] %}
+
+    <div class="card mb-3" data-test="attrition">
+        <div class="card-body">
+            <h3 class="card-title">{{ 'tmonier_predictive.admin.attrition.title'|trans }}</h3>
+            <p class="mb-2">
+                <span class="badge {{ badge }}" data-test="attrition-status">{{ ('tmonier_predictive.admin.attrition.status.' ~ score.status.value)|trans }}</span>
+            </p>
+            {% if score.status.value == 'active' %}
+                <p class="mb-2" data-test="attrition-reason">{{ 'tmonier_predictive.admin.attrition.reason.active'|trans({'days': score.rhythmInDays, 'since': score.daysSinceLastOrder}) }}</p>
+            {% elseif score.status.value in ['at_risk', 'critical'] %}
+                <p class="mb-2" data-test="attrition-reason">{{ 'tmonier_predictive.admin.attrition.reason.late'|trans({'days': score.rhythmInDays, 'since': score.daysSinceLastOrder}) }}</p>
+            {% endif %}
+            <p class="text-secondary small mb-0" data-test="attrition-indicative">{{ 'tmonier_predictive.admin.attrition.indicative'|trans }}</p>
+        </div>
+    </div>
+{% endif %}

@@ -20,6 +20,12 @@ final readonly class AttritionScore
     ) {
     }
 
+    /** Le rythme habituel affiché, en jours entiers (au moins 1). */
+    public function rhythmInDays(): ?int
+    {
+        return null === $this->medianIntervalDays ? null : max(1, (int) round($this->medianIntervalDays));
+    }
+
     public static function unscored(AttritionStatus $status, int $orderCount): self
     {
         return new self($status, null, null, $orderCount);

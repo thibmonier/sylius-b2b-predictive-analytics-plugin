@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\Functional\Admin;
 
 use Sylius\Component\Core\Model\AdminUserInterface;
+use Sylius\Component\Core\Model\CustomerInterface;
+use Sylius\Component\Core\Model\ProductVariantInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\DenyCompanyReadChecker;
 use Tests\Tmonier\SyliusPredictiveAnalyticsPlugin\PredictiveTestTrait;
@@ -62,7 +64,7 @@ trait AttritionAdminTestTrait
         return $company;
     }
 
-    private function placeOrder(object $customer, object $variant, \DateTimeImmutable $date): void
+    private function placeOrder(CustomerInterface $customer, ProductVariantInterface $variant, \DateTimeImmutable $date): void
     {
         $this->catalog()->orderOfLines($customer, [[$variant, 1, 10000]], $date->format('Y-m-d H:i:s'));
     }
