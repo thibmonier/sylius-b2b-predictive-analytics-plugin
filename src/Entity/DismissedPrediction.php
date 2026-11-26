@@ -28,13 +28,13 @@ class DismissedPrediction
 
     public function __construct(
         #[ORM\ManyToOne(targetEntity: CompanyInterface::class)]
-        #[ORM\JoinColumn(name: 'company_id', nullable: false)]
+        #[ORM\JoinColumn(name: 'company_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
         private readonly CompanyInterface $company,
         #[ORM\ManyToOne(targetEntity: ProductVariantInterface::class)]
-        #[ORM\JoinColumn(name: 'variant_id', nullable: false)]
+        #[ORM\JoinColumn(name: 'variant_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
         private readonly ProductVariantInterface $variant,
         #[ORM\ManyToOne(targetEntity: CustomerInterface::class)]
-        #[ORM\JoinColumn(name: 'customer_id', nullable: false)]
+        #[ORM\JoinColumn(name: 'customer_id', referencedColumnName: 'id', nullable: false, onDelete: 'CASCADE')]
         private readonly CustomerInterface $customer,
         #[ORM\Column(type: 'string', length: 10)]
         private readonly string $type,
