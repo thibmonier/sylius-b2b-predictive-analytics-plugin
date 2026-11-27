@@ -42,6 +42,8 @@ composer require tmonier/sylius-b2b-predictive-analytics-plugin
     php bin/console doctrine:migrations:migrate
     ```
 
+    Montée en 0.2.1 : la migration `Version20261126120000` ajoute les clés étrangères des deux tables de prédictions (`ON DELETE CASCADE` : supprimer une entreprise, une variante ou un client supprime ses prédictions). Elle supprime d'abord les prédictions qui pointent vers une ligne disparue, et en affiche le nombre.
+
 3. Importer les routes dans `config/routes.yaml` :
 
     ```yaml
